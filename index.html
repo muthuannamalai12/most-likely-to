@@ -48,7 +48,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .player-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 6px;border:1px solid var(--border);border-radius:999px;font-size:13px;background:var(--surface2)}
 .avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0}
 .vote-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.vote-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);cursor:pointer;color:var(--text);font-size:13px;font-weight:500;transition:all .15s;text-align:center;min-height:80px}
+.vote-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);cursor:pointer;color:var(--text);font-size:13px;font-weight:500;transition:all .15s;text-align:center;min-height:80px;width:100%}
 .vote-btn:hover{border-color:var(--border2);background:var(--surface2);transform:translateY(-1px)}
 .vote-btn.selected{border-color:var(--accent2);background:rgba(199,125,255,.12);color:var(--accent2)}
 .result-item{margin-bottom:12px}
@@ -85,9 +85,6 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .hero h1{margin-bottom:6px}
 .hero-sub{color:var(--muted);font-size:15px;margin-bottom:28px}
 .hero-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px;margin:0 auto}
-.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
-.status-dot.green{background:#70e1c8}
-.status-dot.red{background:#ff6b6b}
 </style>
 </head>
 <body>
@@ -99,7 +96,6 @@ button:disabled{opacity:.35;cursor:not-allowed}
     <div class="hero-icon">🏆</div>
     <h1>Most Likely To</h1>
     <p class="hero-sub">Corporate Edition · Up to 30 players</p>
-    <div id="conn-status" style="margin-bottom:16px;font-size:12px;color:var(--muted)"><span class="status-dot green"></span>Ready</div>
     <div class="hero-btns">
       <button class="btn-primary" style="padding:13px" onclick="showScreen('screen-host-setup')">Host a game</button>
       <button style="padding:13px" onclick="showScreen('screen-join')">Join a game</button>
@@ -116,7 +112,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
     <input id="join-name" type="text" placeholder="e.g. Sarah" maxlength="20">
     <span class="label">Game code</span>
     <input id="join-code" type="text" placeholder="e.g. CORP42" maxlength="8" style="text-transform:uppercase;font-size:22px;letter-spacing:6px;font-weight:600">
-    <button class="btn-primary btn-full" onclick="joinGame()">Join game →</button>
+    <button class="btn-primary btn-full" id="join-btn" onclick="joinGame()">Join game →</button>
   </div>
 </div>
 
@@ -169,12 +165,12 @@ button:disabled{opacity:.35;cursor:not-allowed}
   <div class="card" style="text-align:center;margin-bottom:12px">
     <span class="label" style="text-align:center">Share this code with your team</span>
     <div class="code-display" id="lobby-code-display">——</div>
-    <button onclick="copyCode()" style="margin-top:4px;font-size:12px">Copy code</button>
+    <button onclick="copyCode()" style="margin-top:4px;font-size:12px">📋 Copy code</button>
   </div>
   <div class="card">
     <div class="flex-between" style="margin-bottom:10px">
       <span class="muted">Players joined</span>
-      <span id="lobby-player-count" style="font-weight:600">0 / 30</span>
+      <span id="lobby-player-count" style="font-weight:600">1 / 30</span>
     </div>
     <div id="lobby-players" class="player-grid"></div>
   </div>
@@ -187,7 +183,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
     <div style="font-size:32px;margin-bottom:8px">✓</div>
     <h3 style="margin-bottom:6px">You're in!</h3>
     <p class="muted">Waiting for the host to start...</p>
-    <div style="margin-top:12px"><span class="waiting-pulse"></span><span class="muted" style="font-size:12px">Connected</span></div>
+    <div style="margin-top:12px"><span class="waiting-pulse"></span><span class="muted" style="font-size:12px">Live — checking every 2s</span></div>
   </div>
   <div class="card">
     <div class="flex-between" style="margin-bottom:8px">
@@ -231,8 +227,9 @@ button:disabled{opacity:.35;cursor:not-allowed}
     <span class="label">Most likely to...</span>
     <p id="player-question-text" style="font-size:17px;line-height:1.4;font-weight:500"></p>
   </div>
+  <p class="muted" style="margin-bottom:8px;font-size:12px;text-align:center">Tap a player to vote</p>
   <div id="player-vote-options" class="vote-grid"></div>
-  <div id="player-voted-msg" style="display:none;text-align:center;margin-top:8px">
+  <div id="player-voted-msg" style="display:none;text-align:center;margin-top:12px">
     <span class="badge badge-teal">✓ Vote submitted — waiting for others</span>
   </div>
 </div>
@@ -269,75 +266,59 @@ button:disabled{opacity:.35;cursor:not-allowed}
 <div id="toast"></div>
 
 <script>
-// ── Firebase REST config ──
+// ── Firebase REST ──
 const FB_URL = 'https://whoismostlikelyto-ace7a-default-rtdb.firebaseio.com';
 
 async function fbGet(path) {
-  const r = await fetch(FB_URL + path + '.json');
-  if (!r.ok) throw new Error('GET failed: ' + r.status);
+  const r = await fetch(FB_URL + path + '.json', { method: 'GET' });
+  if (!r.ok) throw new Error('GET ' + r.status + ' ' + await r.text());
   return r.json();
 }
 async function fbSet(path, data) {
   const r = await fetch(FB_URL + path + '.json', {
-    method: 'PUT',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(data)
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
   });
-  if (!r.ok) throw new Error('SET failed: ' + r.status);
+  if (!r.ok) throw new Error('SET ' + r.status + ' ' + await r.text());
   return r.json();
 }
-async function fbUpdate(path, data) {
+async function fbPatch(path, data) {
   const r = await fetch(FB_URL + path + '.json', {
-    method: 'PATCH',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(data)
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
   });
-  if (!r.ok) throw new Error('UPDATE failed: ' + r.status);
-  return r.json();
-}
-async function fbPush(path, data) {
-  const r = await fetch(FB_URL + path + '.json', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(data)
-  });
-  if (!r.ok) throw new Error('PUSH failed: ' + r.status);
+  if (!r.ok) throw new Error('PATCH ' + r.status + ' ' + await r.text());
   return r.json();
 }
 async function fbDelete(path) {
   await fetch(FB_URL + path + '.json', { method: 'DELETE' });
 }
 
-// Polling-based listener (replaces WebSocket listener)
-const listeners = {};
-function fbListen(path, cb, intervalMs = 2000) {
-  if (listeners[path]) clearInterval(listeners[path]);
-  let lastVal = undefined;
-  const poll = async () => {
-    try {
-      const val = await fbGet(path);
-      const str = JSON.stringify(val);
-      if (str !== lastVal) { lastVal = str; cb(val); }
-    } catch(e) { console.warn('Poll error:', e.message); }
+// ── Polling ──
+const _polls = {};
+function startPoll(key, path, cb, ms = 2000) {
+  stopPoll(key);
+  const run = async () => {
+    try { const d = await fbGet(path); cb(d); } catch(e) { console.warn('poll err', e.message); }
   };
-  poll();
-  listeners[path] = setInterval(poll, intervalMs);
+  run();
+  _polls[key] = setInterval(run, ms);
 }
-function fbUnlisten(path) {
-  if (listeners[path]) { clearInterval(listeners[path]); delete listeners[path]; }
+function stopPoll(key) {
+  if (_polls[key]) { clearInterval(_polls[key]); delete _polls[key]; }
 }
-function fbUnlistenAll() {
-  Object.keys(listeners).forEach(k => { clearInterval(listeners[k]); delete listeners[k]; });
+function stopAllPolls() {
+  Object.keys(_polls).forEach(k => { clearInterval(_polls[k]); delete _polls[k]; });
 }
 
 // ── Constants ──
-const AVATAR_COLORS = [
+const COLORS = [
   {bg:'#2d1f5e',fg:'#c77dff'},{bg:'#1f3a2d',fg:'#70e1c8'},
   {bg:'#3a2d1f',fg:'#e8c547'},{bg:'#3a1f2d',fg:'#ff9eb5'},
   {bg:'#1f2d3a',fg:'#70b8ff'},{bg:'#1f3a1f',fg:'#7adb78'},
   {bg:'#3a2a1f',fg:'#ffaa70'},{bg:'#3a1f1f',fg:'#ff8080'},
+  {bg:'#1f2a3a',fg:'#70d4ff'},{bg:'#2a1f3a',fg:'#d4a0ff'},
 ];
-const PRESET_QUESTIONS = [
+
+const PRESET_Q = [
   "reply all to an email that should've been a direct message",
   "forget to mute themselves on a video call",
   "send a message to the wrong Slack channel",
@@ -371,166 +352,190 @@ const PRESET_QUESTIONS = [
 ];
 
 // ── State ──
-let myName = '', myId = '', gameCode = '', isHost = false;
+let myName = '', gameCode = '', isHost = false;
 let gameData = null, timerInterval = null;
 let customQuestions = [], qMode = 'preset';
-let playerColorMap = {};
-let pollPath = null;
+let colorMap = {};
+let lastQShown = -1;
+let lastStatus = '';
 
 // ── Helpers ──
-function getInitials(n){return(n||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}
-function genCode(){return Math.random().toString(36).substr(2,6).toUpperCase()}
-function getColor(name){
-  if(!playerColorMap[name]){
-    const i=Object.keys(playerColorMap).length;
-    playerColorMap[name]=AVATAR_COLORS[i%AVATAR_COLORS.length];
+function gi(id) { return document.getElementById(id); }
+function getInitials(n) { return (n||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+function genCode() { return Math.random().toString(36).substr(2,6).toUpperCase(); }
+function getColor(name) {
+  if (!colorMap[name]) {
+    colorMap[name] = COLORS[Object.keys(colorMap).length % COLORS.length];
   }
-  return playerColorMap[name];
+  return colorMap[name];
 }
-function avatarHTML(name,size=26){
-  const c=getColor(name);
-  return `<span class="avatar" style="width:${size}px;height:${size}px;background:${c.bg};color:${c.fg};font-size:${Math.round(size*.38)}px">${getInitials(name)}</span>`;
+function avatar(name, size=26) {
+  const c = getColor(name);
+  return `<span class="avatar" style="width:${size}px;height:${size}px;background:${c.bg};color:${c.fg};font-size:${Math.round(size*.4)}px">${getInitials(name)}</span>`;
 }
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2600);
+function toast(msg) {
+  const t = gi('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
 }
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  gi(id).classList.add('active');
 }
-function ts(){return Date.now()}
-function copyCode(){
-  navigator.clipboard.writeText(gameCode).then(()=>showToast('Code copied!')).catch(()=>showToast(gameCode));
+function ts() { return Date.now(); }
+function copyCode() {
+  navigator.clipboard.writeText(gameCode).then(() => toast('Code copied!')).catch(() => toast(gameCode));
 }
-function switchQTab(tab){
-  qMode=tab;
-  document.getElementById('tab-preset').classList.toggle('active',tab==='preset');
-  document.getElementById('tab-custom').classList.toggle('active',tab==='custom');
-  document.getElementById('qtab-preset').style.display=tab==='preset'?'':'none';
-  document.getElementById('qtab-custom').style.display=tab==='custom'?'':'none';
+function switchQTab(tab) {
+  qMode = tab;
+  gi('tab-preset').classList.toggle('active', tab==='preset');
+  gi('tab-custom').classList.toggle('active', tab==='custom');
+  gi('qtab-preset').style.display = tab==='preset' ? '' : 'none';
+  gi('qtab-custom').style.display = tab==='custom' ? '' : 'none';
 }
-function addCustomQ(){
-  const inp=document.getElementById('custom-q-input');
-  const v=inp.value.trim();if(!v)return;
-  customQuestions.push(v);inp.value='';renderCustomList();
+function addCustomQ() {
+  const inp = gi('custom-q-input'), v = inp.value.trim();
+  if (!v) return; customQuestions.push(v); inp.value = ''; renderCustomList();
 }
-function removeCustomQ(i){customQuestions.splice(i,1);renderCustomList()}
-function renderCustomList(){
-  document.getElementById('custom-q-list').innerHTML=customQuestions.map((q,i)=>`
-    <div class="q-item"><span class="q-text">Most likely to ${q}</span><button onclick="removeCustomQ(${i})">✕</button></div>`).join('');
-  document.getElementById('custom-q-count').textContent=customQuestions.length+' question'+(customQuestions.length!==1?'s':'')+' added';
+function removeCustomQ(i) { customQuestions.splice(i,1); renderCustomList(); }
+function renderCustomList() {
+  gi('custom-q-list').innerHTML = customQuestions.map((q,i) =>
+    `<div class="q-item"><span class="q-text">Most likely to ${q}</span><button onclick="removeCustomQ(${i})">✕</button></div>`).join('');
+  gi('custom-q-count').textContent = customQuestions.length + ' question' + (customQuestions.length!==1?'s':'') + ' added';
+}
+function sortedPlayers(data) {
+  return Object.values(data.players || {}).sort((a,b) => a.joinedAt - b.joinedAt);
 }
 
-// ── HOST: Create game ──
-async function createGame(){
-  const name=document.getElementById('host-name').value.trim();
-  if(!name){showToast('Enter your name');return;}
-  if(qMode==='custom'&&customQuestions.length<2){showToast('Add at least 2 custom questions');return;}
+// ── HOST: Create ──
+async function createGame() {
+  const name = gi('host-name').value.trim();
+  if (!name) { toast('Enter your name'); return; }
+  if (qMode==='custom' && customQuestions.length < 2) { toast('Add at least 2 questions'); return; }
 
-  const btn=document.getElementById('create-btn');
-  btn.textContent='Creating room...';btn.disabled=true;
+  const btn = gi('create-btn');
+  btn.textContent = 'Creating...'; btn.disabled = true;
 
-  isHost=true;myName=name;myId='host';
-  gameCode=genCode();playerColorMap={};getColor(name);
+  isHost = true; myName = name; gameCode = genCode();
+  colorMap = {}; getColor(name);
 
   let questions;
-  if(qMode==='preset'){
-    const count=parseInt(document.getElementById('q-count').value);
-    questions=[...PRESET_QUESTIONS].sort(()=>Math.random()-.5).slice(0,count);
-  } else { questions=[...customQuestions]; }
+  if (qMode === 'preset') {
+    const count = parseInt(gi('q-count').value);
+    questions = [...PRESET_Q].sort(() => Math.random()-.5).slice(0, count);
+  } else { questions = [...customQuestions]; }
 
-  const timerSecs=parseInt(document.getElementById('vote-time').value);
+  const timerSecs = parseInt(gi('vote-time').value);
 
-  const initialData={
-    host:name,status:'lobby',timerSecs,totalQ:questions.length,
-    questions,currentQ:-1,
-    players:{[name]:{name,id:'host',joinedAt:ts()}},
-    votes:{},scores:{[name]:0},createdAt:ts()
+  const data = {
+    host: name, status: 'lobby', timerSecs, totalQ: questions.length,
+    questions, currentQ: -1,
+    players: { [name]: { name, id: 'host', joinedAt: ts() } },
+    votes: {}, scores: { [name]: 0 }, createdAt: ts()
   };
 
   try {
-    await fbSet('/games/'+gameCode, initialData);
-    gameData=initialData;
-    document.getElementById('lobby-code-display').textContent=gameCode;
-    document.getElementById('lobby-q-info').textContent=questions.length+' questions · '+timerSecs+'s each';
+    await fbSet('/games/' + gameCode, data);
+    gameData = data;
+    gi('lobby-code-display').textContent = gameCode;
+    gi('lobby-q-info').textContent = questions.length + ' questions · ' + timerSecs + 's each';
+    renderLobbyPlayers(data);
     showScreen('screen-host-lobby');
-    showToast('Room created! Code: '+gameCode);
-    startHostLobbyPoll();
+    toast('Room created! Code: ' + gameCode);
+    startHostPoll();
   } catch(e) {
     console.error(e);
-    alert('Error creating room: '+e.message+'\n\nMake sure your Firebase Realtime Database rules have both .read and .write set to true.');
+    alert('Error: ' + e.message + '\n\nCheck Firebase rules are set to true and published.');
   } finally {
-    btn.textContent='Create game room →';btn.disabled=false;
+    btn.textContent = 'Create game room →'; btn.disabled = false;
   }
 }
 
-function startHostLobbyPoll(){
-  fbListen('/games/'+gameCode, data=>{
-    if(!data){return;}
-    gameData=data;
-    const players=Object.values(data.players||{});
-    // Rebuild colors
-    players.sort((a,b)=>a.joinedAt-b.joinedAt).forEach(p=>getColor(p.name));
+function renderLobbyPlayers(data) {
+  const players = sortedPlayers(data);
+  players.forEach(p => getColor(p.name));
+  gi('lobby-player-count').textContent = players.length + ' / 30';
+  gi('lobby-players').innerHTML = players.map(p =>
+    `<span class="player-chip">${avatar(p.name)} ${p.name}${p.name===gameData.host?'<span class="badge badge-yellow" style="padding:1px 6px;font-size:10px;margin-left:4px">host</span>':''}</span>`
+  ).join('');
+  gi('start-btn').disabled = players.length < 2;
+}
 
-    if(data.status==='lobby'){
-      document.getElementById('lobby-player-count').textContent=players.length+' / 30';
-      document.getElementById('lobby-players').innerHTML=players.map(p=>
-        `<span class="player-chip">${avatarHTML(p.name)} ${p.name}${p.name===myName?'<span class="badge badge-yellow" style="padding:1px 6px;font-size:10px;margin-left:4px">host</span>':''}</span>`
-      ).join('');
-      document.getElementById('start-btn').disabled=players.length<2;
+function startHostPoll() {
+  startPoll('host', '/games/' + gameCode, (data) => {
+    if (!data) return;
+    gameData = data;
+
+    if (data.status === 'lobby') {
+      renderLobbyPlayers(data);
     }
-    if(data.status==='voting'&&document.getElementById('screen-host-lobby').classList.contains('active')){
-      fbUnlisten('/games/'+gameCode);
+
+    if (data.status === 'voting' && lastStatus !== 'voting') {
+      lastStatus = 'voting';
+      stopPoll('host');
       hostLoadQuestion();
       startHostVotePoll();
+      return;
     }
-    if(data.status==='results'&&document.getElementById('screen-host-vote').classList.contains('active')){
-      clearInterval(timerInterval);
-      hostShowResults();
+
+    if (data.status === 'final' && lastStatus !== 'final') {
+      lastStatus = 'final';
+      stopAllPolls();
+      renderFinal(data.scores || {});
+      showScreen('screen-final');
     }
-    if(data.status==='final'&&!document.getElementById('screen-final').classList.contains('active')){
-      renderFinal(data.scores||{});showScreen('screen-final');
-    }
-  }, 2000);
+  });
 }
 
-function startHostVotePoll(){
-  fbListen('/games/'+gameCode, data=>{
-    if(!data){return;}
-    gameData=data;
-    const players=Object.values(data.players||{});
-    const qIdx=data.currentQ;
-    const votes=(data.votes&&data.votes['q'+qIdx])||{};
-    const voteCount=Object.keys(votes).length;
+function startHostVotePoll() {
+  startPoll('host-vote', '/games/' + gameCode, (data) => {
+    if (!data) return;
+    gameData = data;
+    const players = sortedPlayers(data);
+    const qIdx = data.currentQ;
+    const votes = (data.votes && data.votes['q' + qIdx]) || {};
+    const voteCount = Object.keys(votes).length;
 
-    if(data.status==='voting'){
-      document.getElementById('host-vote-received').textContent=voteCount+' / '+players.length;
-      const pct=Math.round(voteCount/Math.max(players.length,1)*100);
-      document.getElementById('vote-progress-fill').style.width=pct+'%';
+    if (data.status === 'voting') {
+      gi('host-vote-received').textContent = voteCount + ' / ' + players.length;
+      gi('vote-progress-fill').style.width = Math.round(voteCount / Math.max(players.length,1) * 100) + '%';
       updateLiveTally(votes);
-      if(voteCount>=players.length&&document.getElementById('screen-host-vote').classList.contains('active')){
+      // Auto-advance when all voted
+      if (voteCount >= players.length && document.getElementById('screen-host-vote').classList.contains('active')) {
         clearInterval(timerInterval);
-        setTimeout(hostShowResults,500);
+        stopPoll('host-vote');
+        setTimeout(hostShowResults, 600);
       }
     }
-    if(data.status==='results'&&document.getElementById('screen-host-vote').classList.contains('active')){
-      clearInterval(timerInterval);hostShowResults();
+
+    if (data.status === 'results' && lastStatus !== 'results_' + qIdx) {
+      lastStatus = 'results_' + qIdx;
+      clearInterval(timerInterval);
+      stopPoll('host-vote');
+      hostShowResults();
     }
-    if(data.status==='final'&&!document.getElementById('screen-final').classList.contains('active')){
-      fbUnlistenAll();renderFinal(data.scores||{});showScreen('screen-final');
+
+    if (data.status === 'final' && lastStatus !== 'final') {
+      lastStatus = 'final';
+      stopAllPolls();
+      renderFinal(data.scores || {});
+      showScreen('screen-final');
     }
-  }, 2000);
+
+    // Next question
+    if (data.status === 'voting' && data.currentQ !== qIdx && lastQShown !== data.currentQ) {
+      lastQShown = data.currentQ;
+      hostLoadQuestion();
+    }
+  });
 }
 
-function updateLiveTally(votes){
-  const tally={};
-  Object.values(votes).forEach(v=>{tally[v]=(tally[v]||0)+1});
-  const sorted=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
-  const total=Object.values(votes).length;
-  document.getElementById('live-tally').innerHTML=sorted.map(([name,cnt])=>{
-    const pct=Math.round(cnt/Math.max(total,1)*100);
+function updateLiveTally(votes) {
+  const tally = {};
+  Object.values(votes).forEach(v => { tally[v] = (tally[v]||0)+1; });
+  const sorted = Object.entries(tally).sort((a,b) => b[1]-a[1]);
+  const total = Object.values(votes).length;
+  gi('live-tally').innerHTML = sorted.map(([name,cnt]) => {
+    const pct = Math.round(cnt / Math.max(total,1) * 100);
     return `<div class="result-item">
       <div class="flex-between" style="font-size:13px"><span>${name}</span><span class="muted">${cnt} vote${cnt!==1?'s':''}</span></div>
       <div class="result-bar"><div class="result-bar-fill" style="width:${pct}%"></div></div>
@@ -538,267 +543,336 @@ function updateLiveTally(votes){
   }).join('');
 }
 
-async function startGame(){
-  await fbUpdate('/games/'+gameCode,{status:'voting',currentQ:0,startedAt:ts()});
-}
-
-function hostLoadQuestion(){
-  const data=gameData;
-  const qIdx=data.currentQ;
-  const q=data.questions[qIdx];
-  const num=qIdx+1;const total=data.totalQ;
-  document.getElementById('host-q-progress').textContent='Question '+num+' of '+total;
-  document.getElementById('host-question-text').textContent=q;
-  document.getElementById('q-progress-fill').style.width=Math.round(num/total*100)+'%';
-  document.getElementById('host-vote-received').textContent='0 / '+Object.values(data.players||{}).length;
-  document.getElementById('vote-progress-fill').style.width='0%';
-  document.getElementById('live-tally').innerHTML='';
-  showScreen('screen-host-vote');
-  startHostTimer();
-}
-
-function startHostTimer(){
-  clearInterval(timerInterval);
-  let t=gameData.timerSecs;
-  const badge=document.getElementById('host-timer-badge');
-  const big=document.getElementById('host-timer-big');
-  badge.textContent=t+'s';big.textContent=t;
-  big.classList.remove('urgent');badge.className='badge badge-yellow';
-  timerInterval=setInterval(()=>{
-    t--;badge.textContent=t+'s';big.textContent=t;
-    if(t<=5){big.classList.add('urgent');badge.className='badge badge-red';}
-    if(t<=0){clearInterval(timerInterval);hostShowResults();}
-  },1000);
-}
-
-async function hostShowResults(){
-  clearInterval(timerInterval);
-  const data=gameData;
-  const qIdx=data.currentQ;
-  const votes=(data.votes&&data.votes['q'+qIdx])||{};
-  const tally={};
-  Object.values(votes).forEach(v=>{tally[v]=(tally[v]||0)+1});
-  const sorted=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
-  const total=Object.values(votes).length;
-  const isLast=qIdx>=data.totalQ-1;
-  const winnerName=sorted.length?sorted[0][0]:null;
-  const winnerVotes=sorted.length?sorted[0][1]:0;
-
-  if(winnerName){
-    const newScore=(data.scores&&data.scores[winnerName]||0)+winnerVotes;
-    await fbUpdate('/games/'+gameCode+'/scores',{[winnerName]:newScore});
-    if(gameData.scores)gameData.scores[winnerName]=newScore;
-  }
-
-  renderResults(qIdx,tally,total,isLast,winnerName,winnerVotes);
-  await fbUpdate('/games/'+gameCode,{status:'results'});
-  showScreen('screen-results');
-
-  if(isLast){
-    document.getElementById('results-nav-btn').innerHTML=`<button class="btn-primary" onclick="hostShowFinal()">See final scoreboard →</button>`;
-  } else {
-    document.getElementById('results-nav-btn').innerHTML=`<button class="btn-primary" onclick="hostNextQuestion()">Next question →</button>`;
-  }
-}
-
-async function hostNextQuestion(){
-  const nextQ=gameData.currentQ+1;
-  fbUnlisten('/games/'+gameCode);
-  await fbUpdate('/games/'+gameCode,{status:'voting',currentQ:nextQ});
-  const fresh=await fbGet('/games/'+gameCode);
-  gameData=fresh;
+async function startGame() {
+  lastStatus = 'voting'; lastQShown = 0;
+  await fbPatch('/games/' + gameCode, { status: 'voting', currentQ: 0, startedAt: ts() });
+  const fresh = await fbGet('/games/' + gameCode);
+  gameData = fresh;
+  stopPoll('host');
   hostLoadQuestion();
   startHostVotePoll();
 }
 
-async function hostShowFinal(){
-  await fbUpdate('/games/'+gameCode,{status:'final'});
-  const fresh=await fbGet('/games/'+gameCode);
-  renderFinal(fresh.scores||{});
+function hostLoadQuestion() {
+  const data = gameData;
+  const qIdx = data.currentQ;
+  lastQShown = qIdx;
+  const q = data.questions[qIdx];
+  const num = qIdx + 1; const total = data.totalQ;
+  const players = sortedPlayers(data);
+
+  gi('host-q-progress').textContent = 'Question ' + num + ' of ' + total;
+  gi('host-question-text').textContent = q;
+  gi('q-progress-fill').style.width = Math.round(num/total*100) + '%';
+  gi('host-vote-received').textContent = '0 / ' + players.length;
+  gi('vote-progress-fill').style.width = '0%';
+  gi('live-tally').innerHTML = '';
+  showScreen('screen-host-vote');
+  startHostTimer();
+}
+
+function startHostTimer() {
+  clearInterval(timerInterval);
+  let t = gameData.timerSecs;
+  const badge = gi('host-timer-badge'); const big = gi('host-timer-big');
+  badge.textContent = t+'s'; big.textContent = t;
+  big.classList.remove('urgent'); badge.className = 'badge badge-yellow';
+  timerInterval = setInterval(() => {
+    t--;
+    badge.textContent = t+'s'; big.textContent = t;
+    if (t <= 5) { big.classList.add('urgent'); badge.className = 'badge badge-red'; }
+    if (t <= 0) { clearInterval(timerInterval); stopPoll('host-vote'); hostShowResults(); }
+  }, 1000);
+}
+
+async function hostShowResults() {
+  clearInterval(timerInterval);
+  const data = gameData;
+  const qIdx = data.currentQ;
+  const votes = (data.votes && data.votes['q'+qIdx]) || {};
+  const tally = {};
+  Object.values(votes).forEach(v => { tally[v] = (tally[v]||0)+1; });
+  const sorted = Object.entries(tally).sort((a,b) => b[1]-a[1]);
+  const total = Object.values(votes).length;
+  const isLast = qIdx >= data.totalQ - 1;
+  const winnerName = sorted.length ? sorted[0][0] : null;
+  const winnerVotes = sorted.length ? sorted[0][1] : 0;
+
+  // Update score
+  if (winnerName) {
+    const cur = (data.scores && data.scores[winnerName]) || 0;
+    await fbPatch('/games/' + gameCode + '/scores', { [winnerName]: cur + winnerVotes });
+    if (!gameData.scores) gameData.scores = {};
+    gameData.scores[winnerName] = cur + winnerVotes;
+  }
+
+  await fbPatch('/games/' + gameCode, { status: 'results' });
+  renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes);
+  showScreen('screen-results');
+
+  if (isLast) {
+    gi('results-nav-btn').innerHTML = `<button class="btn-primary" onclick="hostShowFinal()">See final scoreboard →</button>`;
+  } else {
+    gi('results-nav-btn').innerHTML = `<button class="btn-primary" onclick="hostNextQ()">Next question →</button>`;
+  }
+}
+
+async function hostNextQ() {
+  const nextQ = gameData.currentQ + 1;
+  lastStatus = 'voting'; lastQShown = nextQ;
+  await fbPatch('/games/' + gameCode, { status: 'voting', currentQ: nextQ });
+  const fresh = await fbGet('/games/' + gameCode);
+  gameData = fresh;
+  hostLoadQuestion();
+  startHostVotePoll();
+}
+
+async function hostShowFinal() {
+  const fresh = await fbGet('/games/' + gameCode);
+  await fbPatch('/games/' + gameCode, { status: 'final' });
+  renderFinal(fresh.scores || {});
   showScreen('screen-final');
 }
 
 // ── PLAYER: Join ──
-async function joinGame(){
-  const name=document.getElementById('join-name').value.trim();
-  const code=document.getElementById('join-code').value.trim().toUpperCase();
-  if(!name){showToast('Enter your name');return;}
-  if(!code||code.length<4){showToast('Enter a valid game code');return;}
+async function joinGame() {
+  const name = gi('join-name').value.trim();
+  const code = gi('join-code').value.trim().toUpperCase();
+  if (!name) { toast('Enter your name'); return; }
+  if (code.length < 4) { toast('Enter a valid game code'); return; }
 
-  const btn=document.querySelector('#screen-join .btn-primary');
-  btn.textContent='Joining...';btn.disabled=true;
+  const btn = gi('join-btn');
+  btn.textContent = 'Joining...'; btn.disabled = true;
 
-  myName=name;myId='player-'+ts();gameCode=code;
+  myName = name; gameCode = code; isHost = false;
 
   try {
-    const data=await fbGet('/games/'+code);
-    if(!data){showToast('No game found with that code');btn.textContent='Join game →';btn.disabled=false;return;}
-    if(data.status!=='lobby'){showToast('Game already started');btn.textContent='Join game →';btn.disabled=false;return;}
-    const existing=Object.keys(data.players||{});
-    if(existing.includes(name)){showToast('Name taken — try another');btn.textContent='Join game →';btn.disabled=false;return;}
-    if(existing.length>=30){showToast('Room is full');btn.textContent='Join game →';btn.disabled=false;return;}
+    const data = await fbGet('/games/' + code);
+    if (!data) { toast('No game found with that code'); btn.textContent='Join game →'; btn.disabled=false; return; }
+    if (data.status !== 'lobby') { toast('Game already started'); btn.textContent='Join game →'; btn.disabled=false; return; }
 
-    existing.forEach(n=>getColor(n));getColor(name);
-    gameData=data;
+    const existing = Object.keys(data.players || {});
+    if (existing.includes(name)) { toast('Name taken — try another'); btn.textContent='Join game →'; btn.disabled=false; return; }
+    if (existing.length >= 30) { toast('Room is full (30 players)'); btn.textContent='Join game →'; btn.disabled=false; return; }
 
-    await fbUpdate('/games/'+code+'/players',{[name]:{name,id:myId,joinedAt:ts()}});
-    await fbUpdate('/games/'+code+'/scores',{[name]:0});
+    // Build color map in join order
+    existing.forEach(n => getColor(n));
+    getColor(name);
+    gameData = data;
+
+    // Write player to Firebase
+    await fbPatch('/games/' + code + '/players', { [name]: { name, id: 'p_'+ts(), joinedAt: ts() } });
+    await fbPatch('/games/' + code + '/scores', { [name]: 0 });
 
     showScreen('screen-player-lobby');
+    toast('Joined! Waiting for host...');
     startPlayerPoll();
-  } catch(e){
-    console.error(e);showToast('Error: '+e.message);
+  } catch(e) {
+    console.error(e);
+    toast('Error joining: ' + e.message);
   } finally {
-    btn.textContent='Join game →';btn.disabled=false;
+    btn.textContent = 'Join game →'; btn.disabled = false;
   }
 }
 
-function startPlayerPoll(){
-  fbListen('/games/'+gameCode, data=>{
-    if(!data)return;
-    gameData=data;
-    const players=Object.values(data.players||{}).sort((a,b)=>a.joinedAt-b.joinedAt);
-    playerColorMap={};players.forEach(p=>getColor(p.name));
+let lastPlayerQShown = -1;
+let lastPlayerStatus = '';
+let myVotedFor = null;
 
-    if(data.status==='lobby'){
-      document.getElementById('player-lobby-count').textContent=players.length+' players';
-      document.getElementById('player-lobby-list').innerHTML=players.map(p=>
-        `<span class="player-chip">${avatarHTML(p.name)} ${p.name}</span>`).join('');
+function startPlayerPoll() {
+  startPoll('player', '/games/' + gameCode, (data) => {
+    if (!data) return;
+    gameData = data;
+
+    const players = sortedPlayers(data);
+    // Keep color map in sync
+    players.forEach(p => getColor(p.name));
+
+    // ── Lobby ──
+    if (data.status === 'lobby') {
+      gi('player-lobby-count').textContent = players.length + ' players';
+      gi('player-lobby-list').innerHTML = players.map(p =>
+        `<span class="player-chip">${avatar(p.name)} ${p.name}</span>`).join('');
     }
-    if(data.status==='voting'){
-      const qIdx=data.currentQ;
-      const myVote=data.votes&&data.votes['q'+qIdx]&&data.votes['q'+qIdx][myName];
-      const curShown=document.getElementById('player-q-progress').textContent;
-      if(!document.getElementById('screen-player-vote').classList.contains('active')||curShown!=='Question '+(qIdx+1)+' of '+data.totalQ){
-        playerLoadQuestion(qIdx,!!myVote);
+
+    // ── Voting ──
+    if (data.status === 'voting') {
+      const qIdx = data.currentQ;
+      if (lastPlayerQShown !== qIdx) {
+        lastPlayerQShown = qIdx;
+        lastPlayerStatus = 'voting';
+        myVotedFor = null;
+        // Check if I already voted (e.g. rejoined)
+        const existingVote = data.votes && data.votes['q'+qIdx] && data.votes['q'+qIdx][myName];
+        if (existingVote) myVotedFor = existingVote;
+        renderPlayerVote(data, qIdx, !!myVotedFor);
       }
     }
-    if(data.status==='results'){
-      const qIdx=data.currentQ;
-      const votes=(data.votes&&data.votes['q'+qIdx])||{};
-      const tally={};Object.values(votes).forEach(v=>{tally[v]=(tally[v]||0)+1});
-      const sorted=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
-      const total=Object.values(votes).length;
-      const isLast=qIdx>=data.totalQ-1;
-      const winnerName=sorted.length?sorted[0][0]:null;
-      const winnerVotes=sorted.length?sorted[0][1]:0;
-      if(!document.getElementById('screen-results').classList.contains('active')){
-        renderResults(qIdx,tally,total,isLast,winnerName,winnerVotes);
+
+    // ── Results ──
+    if (data.status === 'results') {
+      const qIdx = data.currentQ;
+      if (lastPlayerStatus !== 'results_' + qIdx) {
+        lastPlayerStatus = 'results_' + qIdx;
+        clearInterval(timerInterval);
+        const votes = (data.votes && data.votes['q'+qIdx]) || {};
+        const tally = {};
+        Object.values(votes).forEach(v => { tally[v] = (tally[v]||0)+1; });
+        const sorted = Object.entries(tally).sort((a,b) => b[1]-a[1]);
+        const total = Object.values(votes).length;
+        const isLast = qIdx >= data.totalQ - 1;
+        const winnerName = sorted.length ? sorted[0][0] : null;
+        const winnerVotes = sorted.length ? sorted[0][1] : 0;
+        renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes);
         showScreen('screen-results');
-        document.getElementById('results-nav-btn').innerHTML=isLast
-          ?'<p class="muted"><span class="waiting-pulse"></span>Waiting for final scoreboard...</p>'
-          :'<p class="muted"><span class="waiting-pulse"></span>Waiting for next question...</p>';
+        gi('results-nav-btn').innerHTML = isLast
+          ? '<p class="muted" style="font-size:13px"><span class="waiting-pulse"></span>Waiting for final scoreboard...</p>'
+          : '<p class="muted" style="font-size:13px"><span class="waiting-pulse"></span>Waiting for next question...</p>';
       }
     }
-    if(data.status==='final'&&!document.getElementById('screen-final').classList.contains('active')){
-      fbUnlistenAll();renderFinal(data.scores||{});showScreen('screen-final');
+
+    // ── Final ──
+    if (data.status === 'final' && lastPlayerStatus !== 'final') {
+      lastPlayerStatus = 'final';
+      stopAllPolls();
+      renderFinal(data.scores || {});
+      showScreen('screen-final');
     }
-  }, 2000);
+  });
 }
 
-function playerLoadQuestion(qIdx, alreadyVoted){
+function renderPlayerVote(data, qIdx, alreadyVoted) {
   clearInterval(timerInterval);
-  const data=gameData;
-  const q=data.questions[qIdx];
-  const num=qIdx+1;const total=data.totalQ;
-  const players=Object.values(data.players||{}).sort((a,b)=>a.joinedAt-b.joinedAt);
+  const players = sortedPlayers(data);
+  const q = data.questions[qIdx];
+  const num = qIdx + 1; const total = data.totalQ;
 
-  document.getElementById('player-q-progress').textContent='Question '+num+' of '+total;
-  document.getElementById('player-question-text').textContent=q;
-  document.getElementById('player-q-progress-fill').style.width=Math.round(num/total*100)+'%';
+  gi('player-q-progress').textContent = 'Question ' + num + ' of ' + total;
+  gi('player-question-text').textContent = q;
+  gi('player-q-progress-fill').style.width = Math.round(num/total*100) + '%';
 
-  if(alreadyVoted){
-    document.getElementById('player-vote-options').innerHTML='';
-    document.getElementById('player-voted-msg').style.display='block';
+  // Build vote buttons — ALL players including yourself
+  const others = players;
+
+  if (alreadyVoted) {
+    gi('player-vote-options').innerHTML = others.map(p => {
+      const isMyVote = p.name === myVotedFor;
+      return `<button class="vote-btn${isMyVote?' selected':''}" disabled>
+        ${avatar(p.name, 38)}<span>${p.name}</span>
+        ${isMyVote ? '<span style="font-size:10px;color:var(--accent3)">✓ your vote</span>' : ''}
+      </button>`;
+    }).join('');
+    gi('player-voted-msg').style.display = 'block';
   } else {
-    document.getElementById('player-voted-msg').style.display='none';
-    document.getElementById('player-vote-options').innerHTML=players
-      .filter(p=>p.name!==myName)
-      .map(p=>`<button class="vote-btn" id="vbtn-${p.name.replace(/\W/g,'_')}" onclick="castVote('${p.name.replace(/'/g,"\\'")}')">
-        ${avatarHTML(p.name,38)}<span>${p.name}</span></button>`).join('');
+    gi('player-voted-msg').style.display = 'none';
+    gi('player-vote-options').innerHTML = others.map(p =>
+      `<button class="vote-btn" id="vbtn_${p.name.replace(/\W/g,'_')}" onclick="castVote('${p.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">
+        ${avatar(p.name, 38)}<span>${p.name}</span>
+      </button>`
+    ).join('');
   }
+
   showScreen('screen-player-vote');
   startPlayerTimer();
 }
 
-async function castVote(name){
-  const qIdx=gameData.currentQ;
-  const existingVote=gameData.votes&&gameData.votes['q'+qIdx]&&gameData.votes['q'+qIdx][myName];
-  if(existingVote)return;
-  document.querySelectorAll('.vote-btn').forEach(b=>b.classList.remove('selected'));
-  const btn=document.getElementById('vbtn-'+name.replace(/\W/g,'_'));
-  if(btn)btn.classList.add('selected');
-  document.getElementById('player-voted-msg').style.display='block';
-  await fbUpdate('/games/'+gameCode+'/votes/q'+qIdx,{[myName]:name});
+async function castVote(name) {
+  if (myVotedFor) return; // already voted
+  myVotedFor = name;
+
+  // Highlight selected
+  document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+  const btn = document.getElementById('vbtn_' + name.replace(/\W/g,'_'));
+  if (btn) btn.classList.add('selected');
+  gi('player-voted-msg').style.display = 'block';
+
+  // Disable all buttons
+  document.querySelectorAll('.vote-btn').forEach(b => b.disabled = true);
+
+  const qIdx = gameData.currentQ;
+  try {
+    await fbPatch('/games/' + gameCode + '/votes/q' + qIdx, { [myName]: name });
+  } catch(e) {
+    console.error('Vote failed:', e);
+    toast('Vote error — try again');
+    myVotedFor = null;
+    document.querySelectorAll('.vote-btn').forEach(b => b.disabled = false);
+  }
 }
 
-function startPlayerTimer(){
+function startPlayerTimer() {
   clearInterval(timerInterval);
-  let t=gameData.timerSecs;
-  const badge=document.getElementById('player-timer-badge');
-  badge.textContent=t+'s';badge.className='badge badge-yellow';
-  timerInterval=setInterval(()=>{
-    t--;badge.textContent=t+'s';
-    if(t<=5)badge.className='badge badge-red';
-    if(t<=0){
+  let t = gameData.timerSecs;
+  const badge = gi('player-timer-badge');
+  badge.textContent = t+'s'; badge.className = 'badge badge-yellow';
+  timerInterval = setInterval(() => {
+    t--;
+    badge.textContent = t+'s';
+    if (t <= 5) badge.className = 'badge badge-red';
+    if (t <= 0) {
       clearInterval(timerInterval);
-      document.getElementById('player-voted-msg').style.display='block';
-      document.getElementById('player-voted-msg').innerHTML='<span class="badge badge-red">⏱ Time\'s up</span>';
+      gi('player-voted-msg').style.display = 'block';
+      gi('player-voted-msg').innerHTML = '<span class="badge badge-red">⏱ Time\'s up — waiting for results</span>';
+      document.querySelectorAll('.vote-btn').forEach(b => b.disabled = true);
     }
-  },1000);
+  }, 1000);
 }
 
-// ── Shared renderers ──
-function renderResults(qIdx,tally,total,isLast,winnerName,winnerVotes){
-  document.getElementById('results-q-num').textContent='Q'+(qIdx+1)+' of '+gameData.totalQ;
-  document.getElementById('results-question').textContent=gameData.questions[qIdx]||'';
-  const winDiv=document.getElementById('results-winner');
-  if(winnerName){
-    const pct=Math.round(winnerVotes/Math.max(total,1)*100);
-    winDiv.innerHTML=`<div class="winner-banner">
+// ── Shared ──
+function renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes) {
+  gi('results-q-num').textContent = 'Q'+(qIdx+1)+' of '+gameData.totalQ;
+  gi('results-question').textContent = gameData.questions[qIdx] || '';
+
+  const winDiv = gi('results-winner');
+  if (winnerName) {
+    const pct = Math.round(winnerVotes / Math.max(total,1) * 100);
+    winDiv.innerHTML = `<div class="winner-banner">
       <div style="font-size:28px;margin-bottom:6px">👑</div>
       <div class="winner-name">${winnerName}</div>
       <div class="muted">${winnerVotes} vote${winnerVotes!==1?'s':''} · ${pct}% of the room</div>
     </div>`;
   } else {
-    winDiv.innerHTML=`<div class="card" style="text-align:center"><p class="muted">No votes cast</p></div>`;
+    winDiv.innerHTML = `<div class="card" style="text-align:center"><p class="muted">No votes cast</p></div>`;
   }
-  const sorted=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
-  document.getElementById('results-breakdown').innerHTML='<span class="label">All votes</span>'+
-    (sorted.length?sorted.map(([name,cnt],i)=>{
-      const pct=Math.round(cnt/Math.max(total,1)*100);
+
+  const sorted = Object.entries(tally).sort((a,b) => b[1]-a[1]);
+  gi('results-breakdown').innerHTML = '<span class="label">All votes</span>' +
+    (sorted.length ? sorted.map(([name,cnt],i) => {
+      const pct = Math.round(cnt/Math.max(total,1)*100);
       return `<div class="result-item">
         <div class="flex-between" style="font-size:14px;margin-bottom:3px">
-          <div class="flex-center">${avatarHTML(name,24)}<span>${name}</span></div>
+          <div class="flex-center">${avatar(name,24)}<span>${name}</span></div>
           <span class="muted">${cnt} vote${cnt!==1?'s':''} · ${pct}%</span>
         </div>
         <div class="result-bar"><div class="result-bar-fill${i===0?' gold':''}" style="width:${pct}%"></div></div>
       </div>`;
-    }).join(''):'<p class="muted">No votes recorded</p>');
+    }).join('') : '<p class="muted" style="padding:8px 0">No votes this round</p>');
 }
 
-function renderFinal(scores){
-  const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
-  const medals=['🥇','🥈','🥉'];
-  document.getElementById('final-leaderboard').innerHTML=sorted.map(([name,score],i)=>`
+function renderFinal(scores) {
+  const sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
+  const medals = ['🥇','🥈','🥉'];
+  gi('final-leaderboard').innerHTML = sorted.map(([name,score],i) => `
     <div class="score-row${i===0?' top':''}">
       <span class="rank">${medals[i]||(i+1)}</span>
-      ${avatarHTML(name,32)}
+      ${avatar(name,32)}
       <span class="sname">${name}${name===myName?' <span class="badge badge-teal" style="font-size:10px;padding:1px 8px">you</span>':''}</span>
       <span class="svotes">${score} vote${score!==1?'s':''}</span>
     </div>`).join('');
 }
 
-async function resetGame(){
-  clearInterval(timerInterval);fbUnlistenAll();
-  if(isHost&&gameCode) await fbDelete('/games/'+gameCode);
-  myName='';myId='';gameCode='';isHost=false;
-  gameData=null;playerColorMap={};customQuestions=[];
+async function resetGame() {
+  clearInterval(timerInterval); stopAllPolls();
+  if (isHost && gameCode) { try { await fbDelete('/games/'+gameCode); } catch(e){} }
+  myName=''; gameCode=''; isHost=false; gameData=null;
+  colorMap={}; customQuestions=[]; lastQShown=-1; lastStatus='';
+  lastPlayerQShown=-1; lastPlayerStatus=''; myVotedFor=null;
   showScreen('screen-landing');
 }
 
-document.getElementById('join-code').addEventListener('input',function(){this.value=this.value.toUpperCase()});
-document.getElementById('custom-q-input').addEventListener('keydown',e=>{if(e.key==='Enter')addCustomQ()});
+// ── Init ──
+gi('join-code').addEventListener('input', function(){ this.value=this.value.toUpperCase(); });
+gi('custom-q-input').addEventListener('keydown', e => { if(e.key==='Enter') addCustomQ(); });
 </script>
 </body>
 </html>
