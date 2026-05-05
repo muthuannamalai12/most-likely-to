@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Most Likely To — Corporate Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f0e17;--surface:#1a1929;--surface2:#232235;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#fffffe;--muted:rgba(255,255,255,0.45);
+  --accent:#e8c547;--accent2:#c77dff;--accent3:#70e1c8;--danger:#ff6b6b;
+  --serif:'DM Serif Display',Georgia,serif;--sans:'DM Sans',system-ui,sans-serif;
+  --radius:14px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh}
+.app{max-width:520px;margin:0 auto;padding:20px 16px 60px}
+.screen{display:none;animation:fadeUp 0.3s ease}
+.screen.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+h1{font-family:var(--serif);font-size:36px;font-weight:400;line-height:1.1}
+h2{font-family:var(--serif);font-size:26px;font-weight:400;margin-bottom:16px}
+h3{font-size:17px;font-weight:500;margin-bottom:8px}
+.muted{color:var(--muted);font-size:13px}
+.label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:12px}
+input,select{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:var(--sans);font-size:15px;padding:11px 14px;margin-bottom:10px;outline:none;transition:border-color .2s}
+input:focus,select:focus{border-color:var(--accent2)}
+input::placeholder{color:var(--muted)}
+select option{background:#1a1929}
+button{font-family:var(--sans);font-size:14px;font-weight:500;padding:10px 20px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;transition:all .15s}
+button:hover{background:var(--surface2)}
+button:disabled{opacity:.35;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:#0f0e17;border-color:var(--accent);font-weight:600}
+.btn-primary:hover{background:#f0d060;border-color:#f0d060}
+.btn-full{width:100%}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.badge-yellow{background:rgba(232,197,71,.15);color:var(--accent);border:1px solid rgba(232,197,71,.3)}
+.badge-purple{background:rgba(199,125,255,.15);color:var(--accent2);border:1px solid rgba(199,125,255,.3)}
+.badge-teal{background:rgba(112,225,200,.15);color:var(--accent3);border:1px solid rgba(112,225,200,.3)}
+.badge-red{background:rgba(255,107,107,.15);color:var(--danger);border:1px solid rgba(255,107,107,.3)}
+.progress{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;margin:8px 0}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .5s ease}
+.progress-fill.purple{background:var(--accent2)}
+.player-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.player-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 6px;border:1px solid var(--border);border-radius:999px;font-size:13px;background:var(--surface2)}
+.avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0}
+.vote-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.vote-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);cursor:pointer;color:var(--text);font-size:13px;font-weight:500;transition:all .15s;text-align:center;min-height:80px}
+.vote-btn:hover{border-color:var(--border2);background:var(--surface2);transform:translateY(-1px)}
+.vote-btn.selected{border-color:var(--accent2);background:rgba(199,125,255,.12);color:var(--accent2)}
+.result-item{margin-bottom:12px}
+.result-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:4px}
+.result-bar-fill{height:100%;background:var(--accent2);border-radius:3px;transition:width .7s ease}
+.result-bar-fill.gold{background:var(--accent)}
+.winner-banner{background:linear-gradient(135deg,rgba(232,197,71,.1),rgba(199,125,255,.1));border:1px solid rgba(232,197,71,.25);border-radius:var(--radius);padding:24px;text-align:center;margin-bottom:12px}
+.winner-name{font-family:var(--serif);font-size:28px;color:var(--accent);margin:8px 0 4px}
+.code-display{font-family:'Courier New',monospace;font-size:40px;font-weight:700;letter-spacing:12px;color:var(--accent);text-align:center;padding:16px}
+.tabs{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:var(--radius-sm);margin-bottom:14px}
+.tab{flex:1;text-align:center;padding:8px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;color:var(--muted);border:none;background:transparent;transition:all .15s}
+.tab.active{background:var(--surface);color:var(--text)}
+.q-item{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;font-size:13px;background:var(--surface2)}
+.q-item .q-text{flex:1;line-height:1.4}
+.q-item button{border:none;background:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 2px;flex-shrink:0}
+.score-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;background:var(--surface2)}
+.score-row.top{border-color:rgba(232,197,71,.3);background:rgba(232,197,71,.06)}
+.score-row .rank{font-size:18px;width:28px;text-align:center;flex-shrink:0}
+.score-row .sname{flex:1;font-weight:500}
+.score-row .svotes{font-weight:600;color:var(--accent);font-size:15px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:10px 20px;border-radius:999px;font-size:13px;z-index:9999;transition:transform .3s ease;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+.waiting-pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent3);animation:pulse 1.5s ease-in-out infinite;margin-right:6px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.timer-big{font-family:var(--serif);font-size:52px;color:var(--accent);text-align:center;line-height:1;margin:8px 0;transition:color .3s}
+.timer-big.urgent{color:var(--danger)}
+.flex-between{display:flex;align-items:center;justify-content:space-between}
+.flex-center{display:flex;align-items:center;gap:8px}
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+.back-btn{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0;margin-bottom:16px;display:flex;align-items:center;gap:4px}
+.back-btn:hover{color:var(--text)}
+.hero{padding:40px 0 28px;text-align:center}
+.hero-icon{font-size:52px;margin-bottom:16px}
+.hero h1{margin-bottom:6px}
+.hero-sub{color:var(--muted);font-size:15px;margin-bottom:28px}
+.hero-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:320px;margin:0 auto}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.status-dot.green{background:#70e1c8}
+.status-dot.red{background:#ff6b6b}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- LANDING -->
+<div id="screen-landing" class="screen active">
+  <div class="hero">
+    <div class="hero-icon">🏆</div>
+    <h1>Most Likely To</h1>
+    <p class="hero-sub">Corporate Edition · Up to 30 players</p>
+    <div id="conn-status" style="margin-bottom:16px;font-size:12px;color:var(--muted)"><span class="status-dot green"></span>Ready</div>
+    <div class="hero-btns">
+      <button class="btn-primary" style="padding:13px" onclick="showScreen('screen-host-setup')">Host a game</button>
+      <button style="padding:13px" onclick="showScreen('screen-join')">Join a game</button>
+    </div>
+  </div>
+</div>
+
+<!-- JOIN -->
+<div id="screen-join" class="screen">
+  <button class="back-btn" onclick="showScreen('screen-landing')">← Back</button>
+  <h2>Join a game</h2>
+  <div class="card">
+    <span class="label">Your name</span>
+    <input id="join-name" type="text" placeholder="e.g. Sarah" maxlength="20">
+    <span class="label">Game code</span>
+    <input id="join-code" type="text" placeholder="e.g. CORP42" maxlength="8" style="text-transform:uppercase;font-size:22px;letter-spacing:6px;font-weight:600">
+    <button class="btn-primary btn-full" onclick="joinGame()">Join game →</button>
+  </div>
+</div>
+
+<!-- HOST SETUP -->
+<div id="screen-host-setup" class="screen">
+  <button class="back-btn" onclick="showScreen('screen-landing')">← Back</button>
+  <h2>Set up your game</h2>
+  <div class="card">
+    <span class="label">Your name (host)</span>
+    <input id="host-name" type="text" placeholder="e.g. Alex" maxlength="20">
+    <div class="tabs">
+      <button class="tab active" id="tab-preset" onclick="switchQTab('preset')">Preset (30 Qs)</button>
+      <button class="tab" id="tab-custom" onclick="switchQTab('custom')">Custom questions</button>
+    </div>
+    <div id="qtab-preset">
+      <span class="label">Questions to play</span>
+      <select id="q-count">
+        <option value="20">20 questions (~15 min)</option>
+        <option value="25">25 questions (~20 min)</option>
+        <option value="30" selected>All 30 questions (~25 min)</option>
+      </select>
+    </div>
+    <div id="qtab-custom" style="display:none">
+      <span class="label">Add your own questions</span>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input id="custom-q-input" type="text" placeholder="Most likely to..." style="margin:0;flex:1">
+        <button onclick="addCustomQ()">Add</button>
+      </div>
+      <div id="custom-q-list"></div>
+      <p id="custom-q-count" class="muted" style="margin-top:6px"></p>
+    </div>
+    <hr class="divider">
+    <span class="label">Voting time per question</span>
+    <select id="vote-time">
+      <option value="20">20 seconds (fast)</option>
+      <option value="30" selected>30 seconds</option>
+      <option value="45">45 seconds</option>
+      <option value="60">60 seconds (relaxed)</option>
+    </select>
+    <button class="btn-primary btn-full" id="create-btn" style="margin-top:4px" onclick="createGame()">Create game room →</button>
+  </div>
+</div>
+
+<!-- HOST LOBBY -->
+<div id="screen-host-lobby" class="screen">
+  <div class="flex-between" style="margin-bottom:12px">
+    <h2 style="margin:0">Lobby</h2>
+    <span class="badge badge-teal" id="lobby-q-info"></span>
+  </div>
+  <div class="card" style="text-align:center;margin-bottom:12px">
+    <span class="label" style="text-align:center">Share this code with your team</span>
+    <div class="code-display" id="lobby-code-display">——</div>
+    <button onclick="copyCode()" style="margin-top:4px;font-size:12px">Copy code</button>
+  </div>
+  <div class="card">
+    <div class="flex-between" style="margin-bottom:10px">
+      <span class="muted">Players joined</span>
+      <span id="lobby-player-count" style="font-weight:600">0 / 30</span>
+    </div>
+    <div id="lobby-players" class="player-grid"></div>
+  </div>
+  <button class="btn-primary btn-full" id="start-btn" onclick="startGame()" disabled style="margin-top:4px">Start game (need 2+ players)</button>
+</div>
+
+<!-- PLAYER LOBBY -->
+<div id="screen-player-lobby" class="screen">
+  <div class="card" style="text-align:center;padding:28px">
+    <div style="font-size:32px;margin-bottom:8px">✓</div>
+    <h3 style="margin-bottom:6px">You're in!</h3>
+    <p class="muted">Waiting for the host to start...</p>
+    <div style="margin-top:12px"><span class="waiting-pulse"></span><span class="muted" style="font-size:12px">Connected</span></div>
+  </div>
+  <div class="card">
+    <div class="flex-between" style="margin-bottom:8px">
+      <span class="muted">In the room</span>
+      <span id="player-lobby-count" style="font-weight:600">0 players</span>
+    </div>
+    <div id="player-lobby-list" class="player-grid"></div>
+  </div>
+</div>
+
+<!-- HOST VOTE -->
+<div id="screen-host-vote" class="screen">
+  <div class="flex-between" style="margin-bottom:6px">
+    <span id="host-q-progress" class="muted">Question 1 of 30</span>
+    <span id="host-timer-badge" class="badge badge-yellow">30s</span>
+  </div>
+  <div class="progress"><div class="progress-fill" id="q-progress-fill" style="width:0%"></div></div>
+  <div class="card" style="margin-bottom:10px">
+    <span class="label">Most likely to...</span>
+    <p id="host-question-text" style="font-size:18px;line-height:1.4;font-weight:500"></p>
+  </div>
+  <div class="timer-big" id="host-timer-big">30</div>
+  <div class="card">
+    <div class="flex-between" style="margin-bottom:6px">
+      <span class="muted">Votes received</span>
+      <span id="host-vote-received" style="font-weight:600">0 / 0</span>
+    </div>
+    <div class="progress"><div class="progress-fill purple" id="vote-progress-fill" style="width:0%"></div></div>
+    <div id="live-tally" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- PLAYER VOTE -->
+<div id="screen-player-vote" class="screen">
+  <div class="flex-between" style="margin-bottom:6px">
+    <span id="player-q-progress" class="muted">Question 1 of 30</span>
+    <span id="player-timer-badge" class="badge badge-yellow">30s</span>
+  </div>
+  <div class="progress"><div class="progress-fill" id="player-q-progress-fill" style="width:0%"></div></div>
+  <div class="card" style="margin-bottom:10px">
+    <span class="label">Most likely to...</span>
+    <p id="player-question-text" style="font-size:17px;line-height:1.4;font-weight:500"></p>
+  </div>
+  <div id="player-vote-options" class="vote-grid"></div>
+  <div id="player-voted-msg" style="display:none;text-align:center;margin-top:8px">
+    <span class="badge badge-teal">✓ Vote submitted — waiting for others</span>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="screen-results" class="screen">
+  <div class="flex-between" style="margin-bottom:12px">
+    <h2 style="margin:0">Results</h2>
+    <span id="results-q-num" class="badge badge-purple"></span>
+  </div>
+  <div class="card" style="margin-bottom:10px;padding:12px 16px">
+    <span class="label">Most likely to...</span>
+    <p id="results-question" style="font-size:15px;font-weight:500;line-height:1.4"></p>
+  </div>
+  <div id="results-winner"></div>
+  <div class="card" id="results-breakdown"></div>
+  <div id="results-nav-btn" style="text-align:center;margin-top:12px"></div>
+</div>
+
+<!-- FINAL -->
+<div id="screen-final" class="screen">
+  <div style="text-align:center;padding:28px 0 20px">
+    <div style="font-size:44px;margin-bottom:8px">🎉</div>
+    <h2 style="margin-bottom:4px">Game over!</h2>
+    <p class="muted">Here's how the votes landed</p>
+  </div>
+  <div id="final-leaderboard"></div>
+  <div style="text-align:center;margin-top:20px">
+    <button class="btn-primary" onclick="resetGame()">Play again</button>
+  </div>
+</div>
+
+</div>
+<div id="toast"></div>
+
+<script>
+// ── Firebase REST config ──
+const FB_URL = 'https://whoismostlikelyto-ace7a-default-rtdb.firebaseio.com';
+
+async function fbGet(path) {
+  const r = await fetch(FB_URL + path + '.json');
+  if (!r.ok) throw new Error('GET failed: ' + r.status);
+  return r.json();
+}
+async function fbSet(path, data) {
+  const r = await fetch(FB_URL + path + '.json', {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error('SET failed: ' + r.status);
+  return r.json();
+}
+async function fbUpdate(path, data) {
+  const r = await fetch(FB_URL + path + '.json', {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error('UPDATE failed: ' + r.status);
+  return r.json();
+}
+async function fbPush(path, data) {
+  const r = await fetch(FB_URL + path + '.json', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error('PUSH failed: ' + r.status);
+  return r.json();
+}
+async function fbDelete(path) {
+  await fetch(FB_URL + path + '.json', { method: 'DELETE' });
+}
+
+// Polling-based listener (replaces WebSocket listener)
+const listeners = {};
+function fbListen(path, cb, intervalMs = 2000) {
+  if (listeners[path]) clearInterval(listeners[path]);
+  let lastVal = undefined;
+  const poll = async () => {
+    try {
+      const val = await fbGet(path);
+      const str = JSON.stringify(val);
+      if (str !== lastVal) { lastVal = str; cb(val); }
+    } catch(e) { console.warn('Poll error:', e.message); }
+  };
+  poll();
+  listeners[path] = setInterval(poll, intervalMs);
+}
+function fbUnlisten(path) {
+  if (listeners[path]) { clearInterval(listeners[path]); delete listeners[path]; }
+}
+function fbUnlistenAll() {
+  Object.keys(listeners).forEach(k => { clearInterval(listeners[k]); delete listeners[k]; });
+}
+
+// ── Constants ──
+const AVATAR_COLORS = [
+  {bg:'#2d1f5e',fg:'#c77dff'},{bg:'#1f3a2d',fg:'#70e1c8'},
+  {bg:'#3a2d1f',fg:'#e8c547'},{bg:'#3a1f2d',fg:'#ff9eb5'},
+  {bg:'#1f2d3a',fg:'#70b8ff'},{bg:'#1f3a1f',fg:'#7adb78'},
+  {bg:'#3a2a1f',fg:'#ffaa70'},{bg:'#3a1f1f',fg:'#ff8080'},
+];
+const PRESET_QUESTIONS = [
+  "reply all to an email that should've been a direct message",
+  "forget to mute themselves on a video call",
+  "send a message to the wrong Slack channel",
+  "talk over everyone in a meeting without noticing",
+  "reschedule a meeting five minutes before it starts",
+  "bring strong-smelling food to eat at their desk",
+  "write an essay-length email when one sentence would do",
+  "accidentally include their salary in a shared spreadsheet",
+  "decline a meeting with no reason given",
+  "fall asleep during a presentation",
+  "use jargon no one actually understands",
+  "be late to every meeting but start exactly on time when they're running it",
+  "put something in the calendar without checking anyone's availability first",
+  "send a passive-aggressive email and CC the manager",
+  "leave dishes in the sink in the office kitchen",
+  "forget someone's name five seconds after being introduced",
+  "say 'let's take this offline' and never follow up",
+  "post a meme in the all-hands channel",
+  "have a 30-minute intro call that could've been an email",
+  "never turn their camera on during video calls",
+  "reply to a thread from three months ago like nothing happened",
+  "accidentally send a personal text to a work group chat",
+  "bring up unrelated topics in every meeting",
+  "ask a question that was already answered in the email chain",
+  "take the last coffee without refilling the pot",
+  "show up to a meeting without having read the pre-reads",
+  "send a meeting invite at 4:59pm on a Friday",
+  "screenshot a private conversation and accidentally share it",
+  "use a virtual background so chaotic people think they're in a disaster zone",
+  "get promoted purely based on how loud they are in meetings"
+];
+
+// ── State ──
+let myName = '', myId = '', gameCode = '', isHost = false;
+let gameData = null, timerInterval = null;
+let customQuestions = [], qMode = 'preset';
+let playerColorMap = {};
+let pollPath = null;
+
+// ── Helpers ──
+function getInitials(n){return(n||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2)}
+function genCode(){return Math.random().toString(36).substr(2,6).toUpperCase()}
+function getColor(name){
+  if(!playerColorMap[name]){
+    const i=Object.keys(playerColorMap).length;
+    playerColorMap[name]=AVATAR_COLORS[i%AVATAR_COLORS.length];
+  }
+  return playerColorMap[name];
+}
+function avatarHTML(name,size=26){
+  const c=getColor(name);
+  return `<span class="avatar" style="width:${size}px;height:${size}px;background:${c.bg};color:${c.fg};font-size:${Math.round(size*.38)}px">${getInitials(name)}</span>`;
+}
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function ts(){return Date.now()}
+function copyCode(){
+  navigator.clipboard.writeText(gameCode).then(()=>showToast('Code copied!')).catch(()=>showToast(gameCode));
+}
+function switchQTab(tab){
+  qMode=tab;
+  document.getElementById('tab-preset').classList.toggle('active',tab==='preset');
+  document.getElementById('tab-custom').classList.toggle('active',tab==='custom');
+  document.getElementById('qtab-preset').style.display=tab==='preset'?'':'none';
+  document.getElementById('qtab-custom').style.display=tab==='custom'?'':'none';
+}
+function addCustomQ(){
+  const inp=document.getElementById('custom-q-input');
+  const v=inp.value.trim();if(!v)return;
+  customQuestions.push(v);inp.value='';renderCustomList();
+}
+function removeCustomQ(i){customQuestions.splice(i,1);renderCustomList()}
+function renderCustomList(){
+  document.getElementById('custom-q-list').innerHTML=customQuestions.map((q,i)=>`
+    <div class="q-item"><span class="q-text">Most likely to ${q}</span><button onclick="removeCustomQ(${i})">✕</button></div>`).join('');
+  document.getElementById('custom-q-count').textContent=customQuestions.length+' question'+(customQuestions.length!==1?'s':'')+' added';
+}
+
+// ── HOST: Create game ──
+async function createGame(){
+  const name=document.getElementById('host-name').value.trim();
+  if(!name){showToast('Enter your name');return;}
+  if(qMode==='custom'&&customQuestions.length<2){showToast('Add at least 2 custom questions');return;}
+
+  const btn=document.getElementById('create-btn');
+  btn.textContent='Creating room...';btn.disabled=true;
+
+  isHost=true;myName=name;myId='host';
+  gameCode=genCode();playerColorMap={};getColor(name);
+
+  let questions;
+  if(qMode==='preset'){
+    const count=parseInt(document.getElementById('q-count').value);
+    questions=[...PRESET_QUESTIONS].sort(()=>Math.random()-.5).slice(0,count);
+  } else { questions=[...customQuestions]; }
+
+  const timerSecs=parseInt(document.getElementById('vote-time').value);
+
+  const initialData={
+    host:name,status:'lobby',timerSecs,totalQ:questions.length,
+    questions,currentQ:-1,
+    players:{[name]:{name,id:'host',joinedAt:ts()}},
+    votes:{},scores:{[name]:0},createdAt:ts()
+  };
+
+  try {
+    await fbSet('/games/'+gameCode, initialData);
+    gameData=initialData;
+    document.getElementById('lobby-code-display').textContent=gameCode;
+    document.getElementById('lobby-q-info').textContent=questions.length+' questions · '+timerSecs+'s each';
+    showScreen('screen-host-lobby');
+    showToast('Room created! Code: '+gameCode);
+    startHostLobbyPoll();
+  } catch(e) {
+    console.error(e);
+    alert('Error creating room: '+e.message+'\n\nMake sure your Firebase Realtime Database rules have both .read and .write set to true.');
+  } finally {
+    btn.textContent='Create game room →';btn.disabled=false;
+  }
+}
+
+function startHostLobbyPoll(){
+  fbListen('/games/'+gameCode, data=>{
+    if(!data){return;}
+    gameData=data;
+    const players=Object.values(data.players||{});
+    // Rebuild colors
+    players.sort((a,b)=>a.joinedAt-b.joinedAt).forEach(p=>getColor(p.name));
+
+    if(data.status==='lobby'){
+      document.getElementById('lobby-player-count').textContent=players.length+' / 30';
+      document.getElementById('lobby-players').innerHTML=players.map(p=>
+        `<span class="player-chip">${avatarHTML(p.name)} ${p.name}${p.name===myName?'<span class="badge badge-yellow" style="padding:1px 6px;font-size:10px;margin-left:4px">host</span>':''}</span>`
+      ).join('');
+      document.getElementById('start-btn').disabled=players.length<2;
+    }
+    if(data.status==='voting'&&document.getElementById('screen-host-lobby').classList.contains('active')){
+      fbUnlisten('/games/'+gameCode);
+      hostLoadQuestion();
+      startHostVotePoll();
+    }
+    if(data.status==='results'&&document.getElementById('screen-host-vote').classList.contains('active')){
+      clearInterval(timerInterval);
+      hostShowResults();
+    }
+    if(data.status==='final'&&!document.getElementById('screen-final').classList.contains('active')){
+      renderFinal(data.scores||{});showScreen('screen-final');
+    }
+  }, 2000);
+}
+
+function startHostVotePoll(){
+  fbListen('/games/'+gameCode, data=>{
+    if(!data){return;}
+    gameData=data;
+    const players=Object.values(data.players||{});
+    const qIdx=data.currentQ;
+    const votes=(data.votes&&data.votes['q'+qIdx])||{};
+    const voteCount=Object.keys(votes).length;
+
+    if(data.status==='voting'){
+      document.getElementById('host-vote-received').textContent=voteCount+' / '+players.length;
+      const pct=Math.round(voteCount/Math.max(players.length,1)*100);
+      document.getElementById('vote-progress-fill').style.width=pct+'%';
+      updateLiveTally(votes);
+      if(voteCount>=players.length&&document.getElementById('screen-host-vote').classList.contains('active')){
+        clearInterval(timerInterval);
+        setTimeout(hostShowResults,500);
+      }
+    }
+    if(data.status==='results'&&document.getElementById('screen-host-vote').classList.contains('active')){
+      clearInterval(timerInterval);hostShowResults();
+    }
+    if(data.status==='final'&&!document.getElementById('screen-final').classList.contains('active')){
+      fbUnlistenAll();renderFinal(data.scores||{});showScreen('screen-final');
+    }
+  }, 2000);
+}
+
+function updateLiveTally(votes){
+  const tally={};
+  Object.values(votes).forEach(v=>{tally[v]=(tally[v]||0)+1});
+  const sorted=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
+  const total=Object.values(votes).length;
+  document.getElementById('live-tally').innerHTML=sorted.map(([name,cnt])=>{
+    const pct=Math.round(cnt/Math.max(total,1)*100);
+    return `<div class="result-item">
+      <div class="flex-between" style="font-size:13px"><span>${name}</span><span class="muted">${cnt} vote${cnt!==1?'s':''}</span></div>
+      <div class="result-bar"><div class="result-bar-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+}
+
+async function startGame(){
+  await fbUpdate('/games/'+gameCode,{status:'voting',currentQ:0,startedAt:ts()});
+}
+
+function hostLoadQuestion(){
+  const data=gameData;
+  const qIdx=data.currentQ;
+  const q=data.questions[qIdx];
+  const num=qIdx+1;const total=data.totalQ;
+  document.getElementById('host-q-progress').textContent='Question '+num+' of '+total;
+  document.getElementById('host-question-text').textContent=q;
+  document.getElementById('q-progress-fill').style.width=Math.round(num/total*100)+'%';
+  document.getElementById('host-vote-received').textContent='0 / '+Object.values(data.players||{}).length;
+  document.getElementById('vote-progress-fill').style.width='0%';
+  document.getElementById('live-tally').innerHTML='';
+  showScreen('screen-host-vote');
+  startHostTimer();
+}
+
+function startHostTimer(){
+  clearInterval(timerInterval);
+  let t=gameData.timerSecs;
+  const badge=document.getElementById('host-timer-badge');
+  const big=document.getElementById('host-timer-big');
+  badge.textContent=t+'s';big.textContent=t;
+  big.classList.remove('urgent');badge.className='badge badge-yellow';
+  timerInterval=setInterval(()=>{
+    t--;badge.textContent=t+'s';big.textContent=t;
+    if(t<=5){big.classList.add('urgent');badge.className='badge badge-red';}
+    if(t<=0){clearInterval(timerInterval);hostShowResults();}
+  },1000);
+}
+
+async function hostShowResults(){
+  clearInterval(timerInterval);
+  const data=gameData;
+  const qIdx=data.currentQ;
+  const votes=(data.votes&&data.votes['q'+qIdx])||{};
+  const tally={};
+  Object.values(votes).forEach(v=>{tally[v]=(tally[v]||0)+1});
+  const sorted=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
+  const total=Object.values(votes).length;
+  const isLast=qIdx>=data.totalQ-1;
+  const winnerName=sorted.length?sorted[0][0]:null;
+  const winnerVotes=sorted.length?sorted[0][1]:0;
+
+  if(winnerName){
+    const newScore=(data.scores&&data.scores[winnerName]||0)+winnerVotes;
+    await fbUpdate('/games/'+gameCode+'/scores',{[winnerName]:newScore});
+    if(gameData.scores)gameData.scores[winnerName]=newScore;
+  }
+
+  renderResults(qIdx,tally,total,isLast,winnerName,winnerVotes);
+  await fbUpdate('/games/'+gameCode,{status:'results'});
+  showScreen('screen-results');
+
+  if(isLast){
+    document.getElementById('results-nav-btn').innerHTML=`<button class="btn-primary" onclick="hostShowFinal()">See final scoreboard →</button>`;
+  } else {
+    document.getElementById('results-nav-btn').innerHTML=`<button class="btn-primary" onclick="hostNextQuestion()">Next question →</button>`;
+  }
+}
+
+async function hostNextQuestion(){
+  const nextQ=gameData.currentQ+1;
+  fbUnlisten('/games/'+gameCode);
+  await fbUpdate('/games/'+gameCode,{status:'voting',currentQ:nextQ});
+  const fresh=await fbGet('/games/'+gameCode);
+  gameData=fresh;
+  hostLoadQuestion();
+  startHostVotePoll();
+}
+
+async function hostShowFinal(){
+  await fbUpdate('/games/'+gameCode,{status:'final'});
+  const fresh=await fbGet('/games/'+gameCode);
+  renderFinal(fresh.scores||{});
+  showScreen('screen-final');
+}
+
+// ── PLAYER: Join ──
+async function joinGame(){
+  const name=document.getElementById('join-name').value.trim();
+  const code=document.getElementById('join-code').value.trim().toUpperCase();
+  if(!name){showToast('Enter your name');return;}
+  if(!code||code.length<4){showToast('Enter a valid game code');return;}
+
+  const btn=document.querySelector('#screen-join .btn-primary');
+  btn.textContent='Joining...';btn.disabled=true;
+
+  myName=name;myId='player-'+ts();gameCode=code;
+
+  try {
+    const data=await fbGet('/games/'+code);
+    if(!data){showToast('No game found with that code');btn.textContent='Join game →';btn.disabled=false;return;}
+    if(data.status!=='lobby'){showToast('Game already started');btn.textContent='Join game →';btn.disabled=false;return;}
+    const existing=Object.keys(data.players||{});
+    if(existing.includes(name)){showToast('Name taken — try another');btn.textContent='Join game →';btn.disabled=false;return;}
+    if(existing.length>=30){showToast('Room is full');btn.textContent='Join game →';btn.disabled=false;return;}
+
+    existing.forEach(n=>getColor(n));getColor(name);
+    gameData=data;
+
+    await fbUpdate('/games/'+code+'/players',{[name]:{name,id:myId,joinedAt:ts()}});
+    await fbUpdate('/games/'+code+'/scores',{[name]:0});
+
+    showScreen('screen-player-lobby');
+    startPlayerPoll();
+  } catch(e){
+    console.error(e);showToast('Error: '+e.message);
+  } finally {
+    btn.textContent='Join game →';btn.disabled=false;
+  }
+}
+
+function startPlayerPoll(){
+  fbListen('/games/'+gameCode, data=>{
+    if(!data)return;
+    gameData=data;
+    const players=Object.values(data.players||{}).sort((a,b)=>a.joinedAt-b.joinedAt);
+    playerColorMap={};players.forEach(p=>getColor(p.name));
+
+    if(data.status==='lobby'){
+      document.getElementById('player-lobby-count').textContent=players.length+' players';
+      document.getElementById('player-lobby-list').innerHTML=players.map(p=>
+        `<span class="player-chip">${avatarHTML(p.name)} ${p.name}</span>`).join('');
+    }
+    if(data.status==='voting'){
+      const qIdx=data.currentQ;
+      const myVote=data.votes&&data.votes['q'+qIdx]&&data.votes['q'+qIdx][myName];
+      const curShown=document.getElementById('player-q-progress').textContent;
+      if(!document.getElementById('screen-player-vote').classList.contains('active')||curShown!=='Question '+(qIdx+1)+' of '+data.totalQ){
+        playerLoadQuestion(qIdx,!!myVote);
+      }
+    }
+    if(data.status==='results'){
+      const qIdx=data.currentQ;
+      const votes=(data.votes&&data.votes['q'+qIdx])||{};
+      const tally={};Object.values(votes).forEach(v=>{tally[v]=(tally[v]||0)+1});
+      const sorted=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
+      const total=Object.values(votes).length;
+      const isLast=qIdx>=data.totalQ-1;
+      const winnerName=sorted.length?sorted[0][0]:null;
+      const winnerVotes=sorted.length?sorted[0][1]:0;
+      if(!document.getElementById('screen-results').classList.contains('active')){
+        renderResults(qIdx,tally,total,isLast,winnerName,winnerVotes);
+        showScreen('screen-results');
+        document.getElementById('results-nav-btn').innerHTML=isLast
+          ?'<p class="muted"><span class="waiting-pulse"></span>Waiting for final scoreboard...</p>'
+          :'<p class="muted"><span class="waiting-pulse"></span>Waiting for next question...</p>';
+      }
+    }
+    if(data.status==='final'&&!document.getElementById('screen-final').classList.contains('active')){
+      fbUnlistenAll();renderFinal(data.scores||{});showScreen('screen-final');
+    }
+  }, 2000);
+}
+
+function playerLoadQuestion(qIdx, alreadyVoted){
+  clearInterval(timerInterval);
+  const data=gameData;
+  const q=data.questions[qIdx];
+  const num=qIdx+1;const total=data.totalQ;
+  const players=Object.values(data.players||{}).sort((a,b)=>a.joinedAt-b.joinedAt);
+
+  document.getElementById('player-q-progress').textContent='Question '+num+' of '+total;
+  document.getElementById('player-question-text').textContent=q;
+  document.getElementById('player-q-progress-fill').style.width=Math.round(num/total*100)+'%';
+
+  if(alreadyVoted){
+    document.getElementById('player-vote-options').innerHTML='';
+    document.getElementById('player-voted-msg').style.display='block';
+  } else {
+    document.getElementById('player-voted-msg').style.display='none';
+    document.getElementById('player-vote-options').innerHTML=players
+      .filter(p=>p.name!==myName)
+      .map(p=>`<button class="vote-btn" id="vbtn-${p.name.replace(/\W/g,'_')}" onclick="castVote('${p.name.replace(/'/g,"\\'")}')">
+        ${avatarHTML(p.name,38)}<span>${p.name}</span></button>`).join('');
+  }
+  showScreen('screen-player-vote');
+  startPlayerTimer();
+}
+
+async function castVote(name){
+  const qIdx=gameData.currentQ;
+  const existingVote=gameData.votes&&gameData.votes['q'+qIdx]&&gameData.votes['q'+qIdx][myName];
+  if(existingVote)return;
+  document.querySelectorAll('.vote-btn').forEach(b=>b.classList.remove('selected'));
+  const btn=document.getElementById('vbtn-'+name.replace(/\W/g,'_'));
+  if(btn)btn.classList.add('selected');
+  document.getElementById('player-voted-msg').style.display='block';
+  await fbUpdate('/games/'+gameCode+'/votes/q'+qIdx,{[myName]:name});
+}
+
+function startPlayerTimer(){
+  clearInterval(timerInterval);
+  let t=gameData.timerSecs;
+  const badge=document.getElementById('player-timer-badge');
+  badge.textContent=t+'s';badge.className='badge badge-yellow';
+  timerInterval=setInterval(()=>{
+    t--;badge.textContent=t+'s';
+    if(t<=5)badge.className='badge badge-red';
+    if(t<=0){
+      clearInterval(timerInterval);
+      document.getElementById('player-voted-msg').style.display='block';
+      document.getElementById('player-voted-msg').innerHTML='<span class="badge badge-red">⏱ Time\'s up</span>';
+    }
+  },1000);
+}
+
+// ── Shared renderers ──
+function renderResults(qIdx,tally,total,isLast,winnerName,winnerVotes){
+  document.getElementById('results-q-num').textContent='Q'+(qIdx+1)+' of '+gameData.totalQ;
+  document.getElementById('results-question').textContent=gameData.questions[qIdx]||'';
+  const winDiv=document.getElementById('results-winner');
+  if(winnerName){
+    const pct=Math.round(winnerVotes/Math.max(total,1)*100);
+    winDiv.innerHTML=`<div class="winner-banner">
+      <div style="font-size:28px;margin-bottom:6px">👑</div>
+      <div class="winner-name">${winnerName}</div>
+      <div class="muted">${winnerVotes} vote${winnerVotes!==1?'s':''} · ${pct}% of the room</div>
+    </div>`;
+  } else {
+    winDiv.innerHTML=`<div class="card" style="text-align:center"><p class="muted">No votes cast</p></div>`;
+  }
+  const sorted=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('results-breakdown').innerHTML='<span class="label">All votes</span>'+
+    (sorted.length?sorted.map(([name,cnt],i)=>{
+      const pct=Math.round(cnt/Math.max(total,1)*100);
+      return `<div class="result-item">
+        <div class="flex-between" style="font-size:14px;margin-bottom:3px">
+          <div class="flex-center">${avatarHTML(name,24)}<span>${name}</span></div>
+          <span class="muted">${cnt} vote${cnt!==1?'s':''} · ${pct}%</span>
+        </div>
+        <div class="result-bar"><div class="result-bar-fill${i===0?' gold':''}" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join(''):'<p class="muted">No votes recorded</p>');
+}
+
+function renderFinal(scores){
+  const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const medals=['🥇','🥈','🥉'];
+  document.getElementById('final-leaderboard').innerHTML=sorted.map(([name,score],i)=>`
+    <div class="score-row${i===0?' top':''}">
+      <span class="rank">${medals[i]||(i+1)}</span>
+      ${avatarHTML(name,32)}
+      <span class="sname">${name}${name===myName?' <span class="badge badge-teal" style="font-size:10px;padding:1px 8px">you</span>':''}</span>
+      <span class="svotes">${score} vote${score!==1?'s':''}</span>
+    </div>`).join('');
+}
+
+async function resetGame(){
+  clearInterval(timerInterval);fbUnlistenAll();
+  if(isHost&&gameCode) await fbDelete('/games/'+gameCode);
+  myName='';myId='';gameCode='';isHost=false;
+  gameData=null;playerColorMap={};customQuestions=[];
+  showScreen('screen-landing');
+}
+
+document.getElementById('join-code').addEventListener('input',function(){this.value=this.value.toUpperCase()});
+document.getElementById('custom-q-input').addEventListener('keydown',e=>{if(e.key==='Enter')addCustomQ()});
+</script>
+</body>
+</html>
