@@ -206,6 +206,13 @@ button:disabled{opacity:.35;cursor:not-allowed}
     <p id="host-question-text" style="font-size:18px;line-height:1.4;font-weight:500"></p>
   </div>
   <div class="timer-big" id="host-timer-big">30</div>
+
+  <p class="muted" style="margin-bottom:8px;font-size:12px;text-align:center">Tap a player to vote</p>
+  <div id="host-vote-options" class="vote-grid"></div>
+  <div id="host-voted-msg" style="display:none;text-align:center;margin-top:8px;margin-bottom:8px">
+    <span class="badge badge-teal">✓ Vote submitted</span>
+  </div>
+
   <div class="card">
     <div class="flex-between" style="margin-bottom:6px">
       <span class="muted">Votes received</span>
@@ -567,6 +574,28 @@ function hostLoadQuestion() {
   gi('host-vote-received').textContent = '0 / ' + players.length;
   gi('vote-progress-fill').style.width = '0%';
   gi('live-tally').innerHTML = '';
+
+  // Host vote buttons — all players including self
+  myVotedFor = null;
+  const existingVote = data.votes && data.votes['q'+qIdx] && data.votes['q'+qIdx][myName];
+  if (existingVote) myVotedFor = existingVote;
+
+  gi('host-vote-options').innerHTML = players.map(p =>
+    `<button class="vote-btn${p.name === myVotedFor ? ' selected' : ''}" 
+      id="hvbtn_${p.name.replace(/\W/g,'_')}" 
+      onclick="hostCastVote('${p.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')"
+      ${myVotedFor ? 'disabled' : ''}>
+      ${avatar(p.name, 38)}<span>${p.name}</span>
+      ${p.name === myVotedFor ? '<span style="font-size:10px;color:var(--accent3)">✓ your vote</span>' : ''}
+    </button>`
+  ).join('');
+
+  if (myVotedFor) {
+    gi('host-voted-msg').style.display = 'block';
+  } else {
+    gi('host-voted-msg').style.display = 'none';
+  }
+
   showScreen('screen-host-vote');
   startHostTimer();
 }
@@ -777,18 +806,13 @@ function renderPlayerVote(data, qIdx, alreadyVoted) {
 }
 
 async function castVote(name) {
-  if (myVotedFor) return; // already voted
+  if (myVotedFor) return;
   myVotedFor = name;
-
-  // Highlight selected
-  document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('#player-vote-options .vote-btn').forEach(b => b.classList.remove('selected'));
   const btn = document.getElementById('vbtn_' + name.replace(/\W/g,'_'));
   if (btn) btn.classList.add('selected');
   gi('player-voted-msg').style.display = 'block';
-
-  // Disable all buttons
-  document.querySelectorAll('.vote-btn').forEach(b => b.disabled = true);
-
+  document.querySelectorAll('#player-vote-options .vote-btn').forEach(b => b.disabled = true);
   const qIdx = gameData.currentQ;
   try {
     await fbPatch('/games/' + gameCode + '/votes/q' + qIdx, { [myName]: name });
@@ -796,7 +820,26 @@ async function castVote(name) {
     console.error('Vote failed:', e);
     toast('Vote error — try again');
     myVotedFor = null;
-    document.querySelectorAll('.vote-btn').forEach(b => b.disabled = false);
+    document.querySelectorAll('#player-vote-options .vote-btn').forEach(b => b.disabled = false);
+  }
+}
+
+async function hostCastVote(name) {
+  if (myVotedFor) return;
+  myVotedFor = name;
+  document.querySelectorAll('#host-vote-options .vote-btn').forEach(b => b.classList.remove('selected'));
+  const btn = document.getElementById('hvbtn_' + name.replace(/\W/g,'_'));
+  if (btn) btn.classList.add('selected');
+  gi('host-voted-msg').style.display = 'block';
+  document.querySelectorAll('#host-vote-options .vote-btn').forEach(b => b.disabled = true);
+  const qIdx = gameData.currentQ;
+  try {
+    await fbPatch('/games/' + gameCode + '/votes/q' + qIdx, { [myName]: name });
+  } catch(e) {
+    console.error('Host vote failed:', e);
+    toast('Vote error — try again');
+    myVotedFor = null;
+    document.querySelectorAll('#host-vote-options .vote-btn').forEach(b => b.disabled = false);
   }
 }
 
