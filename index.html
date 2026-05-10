@@ -540,15 +540,26 @@ function startHostVotePoll() {
 function updateLiveTally(votes) {
   const tally = {};
   Object.values(votes).forEach(v => { tally[v] = (tally[v]||0)+1; });
-  const sorted = Object.entries(tally).sort((a,b) => b[1]-a[1]);
+  const noneCnt = tally['__none__'] || 0;
+  // Show players sorted, then None at bottom
+  const playerTally = Object.fromEntries(Object.entries(tally).filter(([k]) => k !== '__none__'));
+  const sorted = Object.entries(playerTally).sort((a,b) => b[1]-a[1]);
   const total = Object.values(votes).length;
-  gi('live-tally').innerHTML = sorted.map(([name,cnt]) => {
+  const rows = sorted.map(([name,cnt]) => {
     const pct = Math.round(cnt / Math.max(total,1) * 100);
     return `<div class="result-item">
       <div class="flex-between" style="font-size:13px"><span>${name}</span><span class="muted">${cnt} vote${cnt!==1?'s':''}</span></div>
       <div class="result-bar"><div class="result-bar-fill" style="width:${pct}%"></div></div>
     </div>`;
-  }).join('');
+  });
+  if (noneCnt > 0) {
+    const pct = Math.round(noneCnt / Math.max(total,1) * 100);
+    rows.push(`<div class="result-item" style="opacity:0.7">
+      <div class="flex-between" style="font-size:13px"><span>🚫 None</span><span class="muted">${noneCnt} vote${noneCnt!==1?'s':''}</span></div>
+      <div class="result-bar"><div class="result-bar-fill" style="width:${pct}%;background:var(--muted)"></div></div>
+    </div>`);
+  }
+  gi('live-tally').innerHTML = rows.join('');
 }
 
 async function startGame() {
@@ -958,14 +969,22 @@ function renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes) {
   // Remove __none__ from winner calculation — None can't win
   const playerTally = Object.fromEntries(Object.entries(tally).filter(([k]) => k !== '__none__'));
   const playerSorted = Object.entries(playerTally).sort((a,b) => b[1]-a[1]);
-  const realWinnerName = playerSorted.length ? playerSorted[0][0] : null;
-  const realWinnerVotes = playerSorted.length ? playerSorted[0][1] : 0;
-  // Override for display
+  const noneCnt2 = tally['__none__'] || 0;
+  const allVotedNone = total > 0 && noneCnt2 === total;
+  const realWinnerName = playerSorted.length && playerSorted[0][1] > 0 ? playerSorted[0][0] : null;
+  const realWinnerVotes = realWinnerName ? playerSorted[0][1] : 0;
   const winnerName2 = realWinnerName;
   const winnerVotes2 = realWinnerVotes;
 
   const winDiv = gi('results-winner');
-  if (winnerName2) {
+  if (allVotedNone) {
+    // Everyone voted None
+    winDiv.innerHTML = `<div class="card" style="text-align:center;padding:28px;animation:fadeIn 0.4s ease">
+      <div style="font-size:36px;margin-bottom:10px">🚫</div>
+      <div style="font-size:18px;font-weight:500;margin-bottom:6px">No winner this round</div>
+      <div class="muted">Everyone voted None</div>
+    </div>`;
+  } else if (winnerName2) {
     const topCount = winnerVotes2;
     const tied = Object.entries(playerTally).filter(([,cnt]) => cnt === topCount);
     const isTie = tied.length > 1;
@@ -991,7 +1010,7 @@ function renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes) {
       </div>`;
       launchConfetti(['#e8c547','#f0d060','#fff']);
     }
-  } else {
+  } else if (!allVotedNone) {
     winDiv.innerHTML = `<div class="card" style="text-align:center;animation:fadeIn 0.4s ease"><p class="muted">No votes this round</p></div>`;
   }
 
@@ -1039,17 +1058,37 @@ function renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes) {
 }
 
 function renderFinal(scores) {
-  const sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
+  // Filter out __none__ from scoreboard entirely
+  const cleanScores = Object.fromEntries(
+    Object.entries(scores).filter(([k]) => k !== '__none__')
+  );
+  const sorted = Object.entries(cleanScores).sort((a,b) => b[1]-a[1]);
+  const allZero = sorted.every(([,s]) => s === 0);
   const medals = ['🥇','🥈','🥉'];
+
+  if (allZero) {
+    // Everyone voted None every round
+    gi('final-leaderboard').innerHTML = `
+      <div class="card" style="text-align:center;padding:28px;animation:fadeIn 0.5s ease">
+        <div style="font-size:40px;margin-bottom:12px">🚫</div>
+        <div style="font-size:18px;font-weight:500;margin-bottom:8px">No winners at all!</div>
+        <div class="muted">Everyone voted None every round.<br>A very diplomatic group! 😄</div>
+      </div>`;
+    return;
+  }
+
   gi('final-leaderboard').innerHTML = sorted.map(([name,score],i) => `
-    <div class="score-row${i===0?' top':''}" style="opacity:0;animation:slideInUp 0.5s ease ${i*0.08}s both">
-      <span class="rank" style="animation:${i===0?'bounceIn 0.6s ease 0.3s both':'none'}">${medals[i]||(i+1)}</span>
+    <div class="score-row${i===0&&score>0?' top':''}" style="opacity:0;animation:slideInUp 0.5s ease ${i*0.08}s both">
+      <span class="rank" style="animation:${i===0&&score>0?'bounceIn 0.6s ease 0.3s both':'none'}">${score>0?(medals[i]||(i+1)):'—'}</span>
       ${avatar(name,32)}
       <span class="sname">${name}${name===myName?' <span class="badge badge-teal" style="font-size:10px;padding:1px 8px">you</span>':''}</span>
       <span class="svotes" style="animation:popIn 0.4s ease ${i*0.08+0.2}s both">${score} vote${score!==1?'s':''}</span>
     </div>`).join('');
-  // Big confetti for final
-  setTimeout(() => launchConfetti(['#e8c547','#c77dff','#70e1c8','#ff9eb5','#70b8ff'], 80), 400);
+
+  // Big confetti only if someone actually won something
+  if (!allZero) {
+    setTimeout(() => launchConfetti(['#e8c547','#c77dff','#70e1c8','#ff9eb5','#70b8ff'], 80), 400);
+  }
 }
 
 // ── Confetti ──
