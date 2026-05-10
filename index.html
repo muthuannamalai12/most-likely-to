@@ -612,7 +612,14 @@ function startHostTimer() {
 
 async function hostShowResults() {
   clearInterval(timerInterval);
-  const data = gameData;
+
+  // Always fetch fresh data from Firebase so we have all votes including host's
+  let data = gameData;
+  try {
+    const fresh = await fbGet('/games/' + gameCode);
+    if (fresh) { data = fresh; gameData = fresh; }
+  } catch(e) { console.warn('Could not refresh before results:', e); }
+
   const qIdx = data.currentQ;
   const votes = (data.votes && data.votes['q'+qIdx]) || {};
   const tally = {};
@@ -959,19 +966,26 @@ function renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes) {
 
   // Animated result bars — reveal with stagger
   const sorted = Object.entries(tally).sort((a,b) => b[1]-a[1]);
+
+  // Always show all players sorted by votes, even those with 0 votes
+  const allPlayers = sortedPlayers(gameData);
+  const fullTally = {};
+  allPlayers.forEach(p => { fullTally[p.name] = tally[p.name] || 0; });
+  const fullSorted = Object.entries(fullTally).sort((a,b) => b[1]-a[1]);
+
   gi('results-breakdown').innerHTML = '<span class="label">All votes</span>' +
-    (sorted.length ? sorted.map(([name,cnt],i) => {
-      const pct = Math.round(cnt/Math.max(total,1)*100);
-      return `<div class="result-item" style="animation-delay:${i*0.1}s">
+    fullSorted.map(([name,cnt],i) => {
+      const pct = total > 0 ? Math.round(cnt/total*100) : 0;
+      return `<div class="result-item" style="animation-delay:${i*0.08}s">
         <div class="flex-between" style="font-size:14px;margin-bottom:4px">
           <div class="flex-center">${avatar(name,24)}<span>${name}</span></div>
-          <span class="muted" style="animation:numberCount 0.4s ease ${i*0.1+0.3}s both;display:inline-block">${cnt} vote${cnt!==1?'s':''} · ${pct}%</span>
+          <span class="muted" style="animation:numberCount 0.4s ease ${i*0.08+0.3}s both;display:inline-block">${cnt} vote${cnt!==1?'s':''} · ${pct}%</span>
         </div>
         <div class="result-bar">
-          <div class="result-bar-fill${i===0?' gold':''}" style="width:0%;transition:width 0.8s cubic-bezier(.25,.46,.45,.94) ${i*0.12+0.2}s" data-pct="${pct}"></div>
+          <div class="result-bar-fill${i===0&&cnt>0?' gold':''}" style="width:0%;transition:width 0.8s cubic-bezier(.25,.46,.45,.94) ${i*0.1+0.2}s" data-pct="${pct}"></div>
         </div>
       </div>`;
-    }).join('') : '<p class="muted" style="padding:8px 0">No votes this round</p>');
+    }).join('');
 
   // Animate bars after DOM update
   setTimeout(() => {
