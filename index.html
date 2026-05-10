@@ -378,8 +378,13 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 2600);
 }
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  gi(id).classList.add('active');
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    s.style.visibility = '';
+  });
+  const el = gi(id);
+  el.style.visibility = '';
+  el.classList.add('active');
 }
 function ts() { return Date.now(); }
 function copyCode() {
@@ -882,6 +887,15 @@ async function hostCastVote(name) {
   const qIdx = gameData.currentQ;
   try {
     await fbPatch('/games/' + gameCode + '/votes/q' + qIdx, { [myName]: name });
+    // Immediately update live tally with host vote included
+    const freshVotes = await fbGet('/games/' + gameCode + '/votes/q' + qIdx);
+    if (freshVotes) {
+      updateLiveTally(freshVotes);
+      const playerCount = sortedPlayers(gameData).length;
+      const voteCount = Object.keys(freshVotes).length;
+      gi('host-vote-received').textContent = voteCount + ' / ' + playerCount;
+      gi('vote-progress-fill').style.width = Math.round(voteCount/Math.max(playerCount,1)*100) + '%';
+    }
   } catch(e) {
     console.error('Host vote failed:', e);
     toast('Vote error — try again');
@@ -1044,8 +1058,11 @@ function addRipple(btn, e) {
 
 // ── Question countdown overlay ──
 function showQuestionCountdown(questionNum, totalQ, cb) {
-  // Hide all screens first so nothing shows behind overlay
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  // Fully clear and hide all screens before showing overlay
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    s.style.visibility = 'hidden';
+  });
 
   const overlay = document.createElement('div');
   overlay.style.cssText = `
@@ -1090,17 +1107,68 @@ function showQuestionCountdown(questionNum, totalQ, cb) {
 }
 
 async function resetGame() {
-  clearInterval(timerInterval); stopAllPolls();
+  clearInterval(timerInterval);
+  stopAllPolls();
+
+  // Delete game from Firebase if host
   if (isHost && gameCode) { try { await fbDelete('/games/'+gameCode); } catch(e){} }
+
+  // Reset all state
   myName=''; gameCode=''; isHost=false; gameData=null;
   colorMap={}; customQuestions=[]; lastQShown=-1; lastStatus='';
   lastPlayerQShown=-1; lastPlayerStatus=''; myVotedFor=null;
+
+  // Clear all form inputs
+  ['host-name','join-name','join-code','custom-q-input'].forEach(id => {
+    const el = gi(id); if (el) el.value = '';
+  });
+
+  // Clear all dynamic DOM content
+  ['lobby-players','player-lobby-list','custom-q-list',
+   'live-tally','player-vote-options','host-vote-options',
+   'results-winner','results-breakdown','final-leaderboard',
+   'results-nav-btn'].forEach(id => {
+    const el = gi(id); if (el) el.innerHTML = '';
+  });
+
+  // Reset badges and counters
+  const lpc = gi('lobby-player-count'); if (lpc) lpc.textContent = '0 / 30';
+  const plc = gi('player-lobby-count'); if (plc) plc.textContent = '0 players';
+  const hvr = gi('host-vote-received'); if (hvr) hvr.textContent = '0 / 0';
+  const vpf = gi('vote-progress-fill'); if (vpf) vpf.style.width = '0%';
+  const qpf = gi('q-progress-fill'); if (qpf) qpf.style.width = '0%';
+  const sb = gi('start-btn'); if (sb) sb.disabled = true;
+  const hvm = gi('host-voted-msg'); if (hvm) hvm.style.display = 'none';
+  const pvm = gi('player-voted-msg'); if (pvm) pvm.style.display = 'none';
+
+  // Reset custom question count label
+  const cqc = gi('custom-q-count'); if (cqc) cqc.textContent = '';
+
+  // Remove any leftover overlays
+  const confetti = document.getElementById('confetti-container');
+  if (confetti) confetti.remove();
+  document.querySelectorAll('.confetti-container').forEach(el => el.remove());
+
+  // Restore all screen visibility
+  document.querySelectorAll('.screen').forEach(s => { s.style.visibility = ''; });
+
   showScreen('screen-landing');
 }
 
 // ── Init ──
 gi('join-code').addEventListener('input', function(){ this.value=this.value.toUpperCase(); });
 gi('custom-q-input').addEventListener('keydown', e => { if(e.key==='Enter') addCustomQ(); });
+
+// Reset state when navigating back to landing manually
+document.querySelectorAll('.back-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    // Light reset - clear inputs but keep custom questions
+    myName=''; myVotedFor=null;
+    gi('host-name').value='';
+    gi('join-name').value='';
+    gi('join-code').value='';
+  });
+});
 </script>
 </body>
 </html>
