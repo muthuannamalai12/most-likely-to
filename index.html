@@ -20,6 +20,23 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 .screen{display:none;animation:fadeUp 0.3s ease}
 .screen.active{display:block}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideInUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideInDown{from{opacity:0;transform:translateY(-30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{0%{opacity:0;transform:scale(0.5)}70%{transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
+@keyframes bounceIn{0%{opacity:0;transform:scale(0.3)}50%{opacity:1;transform:scale(1.05)}70%{transform:scale(0.9)}100%{transform:scale(1)}}
+@keyframes crownDrop{0%{opacity:0;transform:translateY(-60px) rotate(-15deg)}60%{transform:translateY(8px) rotate(5deg)}80%{transform:translateY(-4px) rotate(-2deg)}100%{opacity:1;transform:translateY(0) rotate(0deg)}}
+@keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+@keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+@keyframes winnerGlow{0%,100%{box-shadow:0 0 20px rgba(232,197,71,0.2)}50%{box-shadow:0 0 40px rgba(232,197,71,0.5),0 0 80px rgba(232,197,71,0.2)}}
+@keyframes timerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes voteBarGrow{from{width:0}to{width:var(--target-width)}}
+@keyframes numberCount{from{opacity:0;transform:scale(0.7)}to{opacity:1;transform:scale(1)}}
+@keyframes revealCard{0%{opacity:0;transform:translateX(-20px)}100%{opacity:1;transform:translateX(0)}}
+@keyframes trophySpin{0%{transform:rotateY(0deg) scale(0)}50%{transform:rotateY(180deg) scale(1.2)}100%{transform:rotateY(360deg) scale(1)}}
+@keyframes questionSlide{0%{opacity:0;transform:translateX(60px)}100%{opacity:1;transform:translateX(0)}}
+@keyframes staggerFadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes rippleAnim{0%{transform:scale(0);opacity:1}100%{transform:scale(2.5);opacity:0}}
 h1{font-family:var(--serif);font-size:36px;font-weight:400;line-height:1.1}
 h2{font-family:var(--serif);font-size:26px;font-weight:400;margin-bottom:16px}
 h3{font-size:17px;font-weight:500;margin-bottom:8px}
@@ -55,7 +72,28 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .result-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:4px}
 .result-bar-fill{height:100%;background:var(--accent2);border-radius:3px;transition:width .7s ease}
 .result-bar-fill.gold{background:var(--accent)}
-.winner-banner{background:linear-gradient(135deg,rgba(232,197,71,.1),rgba(199,125,255,.1));border:1px solid rgba(232,197,71,.25);border-radius:var(--radius);padding:24px;text-align:center;margin-bottom:12px}
+.winner-banner{background:linear-gradient(135deg,rgba(232,197,71,.12),rgba(199,125,255,.12));border:1px solid rgba(232,197,71,.35);border-radius:var(--radius);padding:28px 24px;text-align:center;margin-bottom:12px;animation:winnerGlow 2s ease-in-out infinite;position:relative;overflow:hidden}
+.winner-banner::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(232,197,71,.05),transparent);animation:shimmer 3s linear infinite;background-size:200% auto}
+.winner-name{font-family:var(--serif);font-size:32px;color:var(--accent);margin:10px 0 6px;animation:bounceIn 0.6s cubic-bezier(.36,.07,.19,.97) both}
+.crown-icon{font-size:36px;animation:crownDrop 0.7s cubic-bezier(.36,.07,.19,.97) both;display:inline-block}
+.tie-banner{background:linear-gradient(135deg,rgba(199,125,255,.12),rgba(112,225,200,.12));border:1px solid rgba(199,125,255,.35);border-radius:var(--radius);padding:28px 24px;text-align:center;margin-bottom:12px;animation:winnerGlow 2s ease-in-out infinite}
+.score-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;background:var(--surface2);transition:all 0.3s}
+.score-row.top{border-color:rgba(232,197,71,.3);background:rgba(232,197,71,.06)}
+.score-row .rank{font-size:18px;width:28px;text-align:center;flex-shrink:0}
+.score-row .sname{flex:1;font-weight:500}
+.score-row .svotes{font-weight:600;color:var(--accent);font-size:15px}
+.vote-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);cursor:pointer;color:var(--text);font-size:13px;font-weight:500;transition:all .2s cubic-bezier(.34,1.56,.64,1);text-align:center;min-height:80px;width:100%}
+.vote-btn:hover:not(:disabled){border-color:var(--accent2);background:rgba(199,125,255,.08);transform:translateY(-3px) scale(1.02);box-shadow:0 8px 20px rgba(0,0,0,.3)}
+.vote-btn:active:not(:disabled){transform:scale(0.96)}
+.vote-btn.selected{border-color:var(--accent2);background:rgba(199,125,255,.15);color:var(--accent2);transform:scale(1.03)}
+.question-card{animation:questionSlide 0.5s cubic-bezier(.25,.46,.45,.94) both}
+.result-item{opacity:0;animation:staggerFadeUp 0.4s ease forwards}
+.confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;overflow:hidden}
+.confetti-piece{position:absolute;width:10px;height:10px;top:-10px;animation:confettiFall linear forwards}
+.timer-big{font-family:var(--serif);font-size:52px;color:var(--accent);text-align:center;line-height:1;margin:8px 0;transition:color .3s}
+.timer-big.urgent{color:var(--danger);animation:timerPulse 0.5s ease-in-out infinite}
+.screen-transition{animation:fadeIn 0.4s ease}
+.lobby-enter{animation:slideInUp 0.4s ease both}
 .winner-name{font-family:var(--serif);font-size:28px;color:var(--accent);margin:8px 0 4px}
 .code-display{font-family:'Courier New',monospace;font-size:40px;font-weight:700;letter-spacing:12px;color:var(--accent);text-align:center;padding:16px}
 .tabs{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:var(--radius-sm);margin-bottom:14px}
@@ -123,27 +161,13 @@ button:disabled{opacity:.35;cursor:not-allowed}
   <div class="card">
     <span class="label">Your name (host)</span>
     <input id="host-name" type="text" placeholder="e.g. Alex" maxlength="20">
-    <div class="tabs">
-      <button class="tab active" id="tab-preset" onclick="switchQTab('preset')">Preset (30 Qs)</button>
-      <button class="tab" id="tab-custom" onclick="switchQTab('custom')">Custom questions</button>
+    <span class="label">Add your questions</span>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <input id="custom-q-input" type="text" placeholder="Most likely to..." style="margin:0;flex:1">
+      <button onclick="addCustomQ()">Add</button>
     </div>
-    <div id="qtab-preset">
-      <span class="label">Questions to play</span>
-      <select id="q-count">
-        <option value="20">20 questions (~15 min)</option>
-        <option value="25">25 questions (~20 min)</option>
-        <option value="30" selected>All 30 questions (~25 min)</option>
-      </select>
-    </div>
-    <div id="qtab-custom" style="display:none">
-      <span class="label">Add your own questions</span>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <input id="custom-q-input" type="text" placeholder="Most likely to..." style="margin:0;flex:1">
-        <button onclick="addCustomQ()">Add</button>
-      </div>
-      <div id="custom-q-list"></div>
-      <p id="custom-q-count" class="muted" style="margin-top:6px"></p>
-    </div>
+    <div id="custom-q-list"></div>
+    <p id="custom-q-count" class="muted" style="margin-top:6px"></p>
     <hr class="divider">
     <span class="label">Voting time per question</span>
     <select id="vote-time">
@@ -259,9 +283,9 @@ button:disabled{opacity:.35;cursor:not-allowed}
 <!-- FINAL -->
 <div id="screen-final" class="screen">
   <div style="text-align:center;padding:28px 0 20px">
-    <div style="font-size:44px;margin-bottom:8px">🎉</div>
-    <h2 style="margin-bottom:4px">Game over!</h2>
-    <p class="muted">Here's how the votes landed</p>
+    <div style="font-size:44px;margin-bottom:8px;animation:trophySpin 0.8s ease both">🎉</div>
+    <h2 style="margin-bottom:4px;animation:slideInDown 0.5s ease 0.3s both;opacity:0">Game over!</h2>
+    <p class="muted" style="animation:fadeIn 0.5s ease 0.6s both;opacity:0">Here's how the votes landed</p>
   </div>
   <div id="final-leaderboard"></div>
   <div style="text-align:center;margin-top:20px">
@@ -325,43 +349,12 @@ const COLORS = [
   {bg:'#1f2a3a',fg:'#70d4ff'},{bg:'#2a1f3a',fg:'#d4a0ff'},
 ];
 
-const PRESET_Q = [
-  "reply all to an email that should've been a direct message",
-  "forget to mute themselves on a video call",
-  "send a message to the wrong Slack channel",
-  "talk over everyone in a meeting without noticing",
-  "reschedule a meeting five minutes before it starts",
-  "bring strong-smelling food to eat at their desk",
-  "write an essay-length email when one sentence would do",
-  "accidentally include their salary in a shared spreadsheet",
-  "decline a meeting with no reason given",
-  "fall asleep during a presentation",
-  "use jargon no one actually understands",
-  "be late to every meeting but start exactly on time when they're running it",
-  "put something in the calendar without checking anyone's availability first",
-  "send a passive-aggressive email and CC the manager",
-  "leave dishes in the sink in the office kitchen",
-  "forget someone's name five seconds after being introduced",
-  "say 'let's take this offline' and never follow up",
-  "post a meme in the all-hands channel",
-  "have a 30-minute intro call that could've been an email",
-  "never turn their camera on during video calls",
-  "reply to a thread from three months ago like nothing happened",
-  "accidentally send a personal text to a work group chat",
-  "bring up unrelated topics in every meeting",
-  "ask a question that was already answered in the email chain",
-  "take the last coffee without refilling the pot",
-  "show up to a meeting without having read the pre-reads",
-  "send a meeting invite at 4:59pm on a Friday",
-  "screenshot a private conversation and accidentally share it",
-  "use a virtual background so chaotic people think they're in a disaster zone",
-  "get promoted purely based on how loud they are in meetings"
-];
+
 
 // ── State ──
 let myName = '', gameCode = '', isHost = false;
 let gameData = null, timerInterval = null;
-let customQuestions = [], qMode = 'preset';
+let customQuestions = [];
 let colorMap = {};
 let lastQShown = -1;
 let lastStatus = '';
@@ -392,13 +385,7 @@ function ts() { return Date.now(); }
 function copyCode() {
   navigator.clipboard.writeText(gameCode).then(() => toast('Code copied!')).catch(() => toast(gameCode));
 }
-function switchQTab(tab) {
-  qMode = tab;
-  gi('tab-preset').classList.toggle('active', tab==='preset');
-  gi('tab-custom').classList.toggle('active', tab==='custom');
-  gi('qtab-preset').style.display = tab==='preset' ? '' : 'none';
-  gi('qtab-custom').style.display = tab==='custom' ? '' : 'none';
-}
+
 function addCustomQ() {
   const inp = gi('custom-q-input'), v = inp.value.trim();
   if (!v) return; customQuestions.push(v); inp.value = ''; renderCustomList();
@@ -417,7 +404,7 @@ function sortedPlayers(data) {
 async function createGame() {
   const name = gi('host-name').value.trim();
   if (!name) { toast('Enter your name'); return; }
-  if (qMode==='custom' && customQuestions.length < 2) { toast('Add at least 2 questions'); return; }
+  if (customQuestions.length < 1) { toast('Add at least 1 question'); return; }
 
   const btn = gi('create-btn');
   btn.textContent = 'Creating...'; btn.disabled = true;
@@ -425,11 +412,7 @@ async function createGame() {
   isHost = true; myName = name; gameCode = genCode();
   colorMap = {}; getColor(name);
 
-  let questions;
-  if (qMode === 'preset') {
-    const count = parseInt(gi('q-count').value);
-    questions = [...PRESET_Q].sort(() => Math.random()-.5).slice(0, count);
-  } else { questions = [...customQuestions]; }
+  let questions = [...customQuestions];
 
   const timerSecs = parseInt(gi('vote-time').value);
 
@@ -568,36 +551,34 @@ function hostLoadQuestion() {
   const num = qIdx + 1; const total = data.totalQ;
   const players = sortedPlayers(data);
 
-  gi('host-q-progress').textContent = 'Question ' + num + ' of ' + total;
-  gi('host-question-text').textContent = q;
-  gi('q-progress-fill').style.width = Math.round(num/total*100) + '%';
-  gi('host-vote-received').textContent = '0 / ' + players.length;
-  gi('vote-progress-fill').style.width = '0%';
-  gi('live-tally').innerHTML = '';
+  // Show countdown then reveal question
+  showQuestionCountdown(num, total, () => {
+    gi('host-q-progress').textContent = 'Question ' + num + ' of ' + total;
+    gi('host-question-text').textContent = q;
+    gi('q-progress-fill').style.width = Math.round(num/total*100) + '%';
+    gi('host-vote-received').textContent = '0 / ' + players.length;
+    gi('vote-progress-fill').style.width = '0%';
+    gi('live-tally').innerHTML = '';
 
-  // Host vote buttons — all players including self
-  myVotedFor = null;
-  const existingVote = data.votes && data.votes['q'+qIdx] && data.votes['q'+qIdx][myName];
-  if (existingVote) myVotedFor = existingVote;
+    myVotedFor = null;
+    const existingVote = data.votes && data.votes['q'+qIdx] && data.votes['q'+qIdx][myName];
+    if (existingVote) myVotedFor = existingVote;
 
-  gi('host-vote-options').innerHTML = players.map(p =>
-    `<button class="vote-btn${p.name === myVotedFor ? ' selected' : ''}" 
-      id="hvbtn_${p.name.replace(/\W/g,'_')}" 
-      onclick="hostCastVote('${p.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')"
-      ${myVotedFor ? 'disabled' : ''}>
-      ${avatar(p.name, 38)}<span>${p.name}</span>
-      ${p.name === myVotedFor ? '<span style="font-size:10px;color:var(--accent3)">✓ your vote</span>' : ''}
-    </button>`
-  ).join('');
+    gi('host-vote-options').innerHTML = players.map((p,i) =>
+      `<button class="vote-btn${p.name === myVotedFor ? ' selected' : ''}"
+        id="hvbtn_${p.name.replace(/\W/g,'_')}"
+        onclick="hostCastVote('${p.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}'); addRipple(this, event)"
+        style="animation:staggerFadeUp 0.3s ease ${i*0.04}s both"
+        ${myVotedFor ? 'disabled' : ''}>
+        ${avatar(p.name, 38)}<span>${p.name}</span>
+        ${p.name === myVotedFor ? '<span style="font-size:10px;color:var(--accent3)">✓ your vote</span>' : ''}
+      </button>`
+    ).join('');
 
-  if (myVotedFor) {
-    gi('host-voted-msg').style.display = 'block';
-  } else {
-    gi('host-voted-msg').style.display = 'none';
-  }
-
-  showScreen('screen-host-vote');
-  startHostTimer();
+    gi('host-voted-msg').style.display = myVotedFor ? 'block' : 'none';
+    showScreen('screen-host-vote');
+    startHostTimer();
+  });
 }
 
 function startHostTimer() {
@@ -627,22 +608,33 @@ async function hostShowResults() {
   const winnerName = sorted.length ? sorted[0][0] : null;
   const winnerVotes = sorted.length ? sorted[0][1] : 0;
 
-  // Update score
-  if (winnerName) {
-    const cur = (data.scores && data.scores[winnerName]) || 0;
-    await fbPatch('/games/' + gameCode + '/scores', { [winnerName]: cur + winnerVotes });
+  // Update scores — give votes to ALL tied winners
+  if (winnerName && winnerVotes > 0) {
+    const tied = Object.entries(tally).filter(([,cnt]) => cnt === winnerVotes);
+    const scoreUpdate = {};
+    tied.forEach(([name, cnt]) => {
+      scoreUpdate[name] = ((data.scores && data.scores[name]) || 0) + cnt;
+    });
+    await fbPatch('/games/' + gameCode + '/scores', scoreUpdate);
     if (!gameData.scores) gameData.scores = {};
-    gameData.scores[winnerName] = cur + winnerVotes;
+    Object.assign(gameData.scores, scoreUpdate);
   }
 
   await fbPatch('/games/' + gameCode, { status: 'results' });
   renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes);
   showScreen('screen-results');
+  // Animate results cards in sequence
+  setTimeout(() => {
+    document.querySelectorAll('#screen-results .card, #screen-results .winner-banner, #screen-results .tie-banner').forEach((el,i) => {
+      el.style.opacity = '0';
+      el.style.animation = `slideInUp 0.4s ease ${i*0.12}s both`;
+    });
+  }, 50);
 
   if (isLast) {
-    gi('results-nav-btn').innerHTML = `<button class="btn-primary" onclick="hostShowFinal()">See final scoreboard →</button>`;
+    gi('results-nav-btn').innerHTML = `<button class="btn-primary" style="animation:popIn 0.5s ease 0.6s both;opacity:0" onclick="hostShowFinal()">🏆 See final scoreboard</button>`;
   } else {
-    gi('results-nav-btn').innerHTML = `<button class="btn-primary" onclick="hostNextQ()">Next question →</button>`;
+    gi('results-nav-btn').innerHTML = `<button class="btn-primary" style="animation:popIn 0.5s ease 0.6s both;opacity:0" onclick="hostNextQ()">Next question →</button>`;
   }
 }
 
@@ -720,8 +712,8 @@ function startPlayerPoll() {
     // ── Lobby ──
     if (data.status === 'lobby') {
       gi('player-lobby-count').textContent = players.length + ' players';
-      gi('player-lobby-list').innerHTML = players.map(p =>
-        `<span class="player-chip">${avatar(p.name)} ${p.name}</span>`).join('');
+      gi('player-lobby-list').innerHTML = players.map((p,i) =>
+        `<span class="player-chip lobby-enter" style="animation-delay:${i*0.05}s">${avatar(p.name)} ${p.name}</span>`).join('');
     }
 
     // ── Voting ──
@@ -783,36 +775,56 @@ function renderPlayerVote(data, qIdx, alreadyVoted) {
   // Build vote buttons — ALL players including yourself
   const others = players;
 
-  if (alreadyVoted) {
-    gi('player-vote-options').innerHTML = others.map(p => {
-      const isMyVote = p.name === myVotedFor;
-      return `<button class="vote-btn${isMyVote?' selected':''}" disabled>
-        ${avatar(p.name, 38)}<span>${p.name}</span>
-        ${isMyVote ? '<span style="font-size:10px;color:var(--accent3)">✓ your vote</span>' : ''}
-      </button>`;
-    }).join('');
-    gi('player-voted-msg').style.display = 'block';
-  } else {
-    gi('player-voted-msg').style.display = 'none';
-    gi('player-vote-options').innerHTML = others.map(p =>
-      `<button class="vote-btn" id="vbtn_${p.name.replace(/\W/g,'_')}" onclick="castVote('${p.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">
-        ${avatar(p.name, 38)}<span>${p.name}</span>
-      </button>`
-    ).join('');
-  }
+  const doRender = () => {
+    if (alreadyVoted) {
+      gi('player-vote-options').innerHTML = others.map((p,i) => {
+        const isMyVote = p.name === myVotedFor;
+        return `<button class="vote-btn${isMyVote?' selected':''}" disabled style="animation:staggerFadeUp 0.3s ease ${i*0.04}s both">
+          ${avatar(p.name, 38)}<span>${p.name}</span>
+          ${isMyVote ? '<span style="font-size:10px;color:var(--accent3)">✓ your vote</span>' : ''}
+        </button>`;
+      }).join('');
+      gi('player-voted-msg').style.display = 'block';
+    } else {
+      gi('player-voted-msg').style.display = 'none';
+      gi('player-vote-options').innerHTML = others.map((p,i) =>
+        `<button class="vote-btn" id="vbtn_${p.name.replace(/\W/g,'_')}"
+          onclick="castVote('${p.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}'); addRipple(this, event)"
+          style="animation:staggerFadeUp 0.3s ease ${i*0.04}s both">
+          ${avatar(p.name, 38)}<span>${p.name}</span>
+        </button>`
+      ).join('');
+    }
+    showScreen('screen-player-vote');
+    startPlayerTimer();
+  };
 
-  showScreen('screen-player-vote');
-  startPlayerTimer();
+  // Show countdown only on first question or new question
+  if (!alreadyVoted) {
+    showQuestionCountdown(num, total, doRender);
+  } else {
+    doRender();
+  }
 }
 
 async function castVote(name) {
   if (myVotedFor) return;
   myVotedFor = name;
-  document.querySelectorAll('#player-vote-options .vote-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('#player-vote-options .vote-btn').forEach(b => {
+    b.classList.remove('selected');
+    b.style.opacity = '0.4';
+    b.style.transform = 'scale(0.95)';
+    b.disabled = true;
+  });
   const btn = document.getElementById('vbtn_' + name.replace(/\W/g,'_'));
-  if (btn) btn.classList.add('selected');
+  if (btn) {
+    btn.classList.add('selected');
+    btn.style.opacity = '1';
+    btn.style.transform = 'scale(1.05)';
+    btn.style.transition = 'all 0.3s cubic-bezier(.34,1.56,.64,1)';
+  }
   gi('player-voted-msg').style.display = 'block';
-  document.querySelectorAll('#player-vote-options .vote-btn').forEach(b => b.disabled = true);
+  gi('player-voted-msg').style.animation = 'slideInUp 0.4s ease';
   const qIdx = gameData.currentQ;
   try {
     await fbPatch('/games/' + gameCode + '/votes/q' + qIdx, { [myName]: name });
@@ -827,11 +839,21 @@ async function castVote(name) {
 async function hostCastVote(name) {
   if (myVotedFor) return;
   myVotedFor = name;
-  document.querySelectorAll('#host-vote-options .vote-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('#host-vote-options .vote-btn').forEach(b => {
+    b.classList.remove('selected');
+    b.style.opacity = '0.4';
+    b.style.transform = 'scale(0.95)';
+    b.disabled = true;
+  });
   const btn = document.getElementById('hvbtn_' + name.replace(/\W/g,'_'));
-  if (btn) btn.classList.add('selected');
+  if (btn) {
+    btn.classList.add('selected');
+    btn.style.opacity = '1';
+    btn.style.transform = 'scale(1.05)';
+    btn.style.transition = 'all 0.3s cubic-bezier(.34,1.56,.64,1)';
+  }
   gi('host-voted-msg').style.display = 'block';
-  document.querySelectorAll('#host-vote-options .vote-btn').forEach(b => b.disabled = true);
+  gi('host-voted-msg').style.animation = 'slideInUp 0.4s ease';
   const qIdx = gameData.currentQ;
   try {
     await fbPatch('/games/' + gameCode + '/votes/q' + qIdx, { [myName]: name });
@@ -868,40 +890,165 @@ function renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes) {
 
   const winDiv = gi('results-winner');
   if (winnerName) {
-    const pct = Math.round(winnerVotes / Math.max(total,1) * 100);
-    winDiv.innerHTML = `<div class="winner-banner">
-      <div style="font-size:28px;margin-bottom:6px">👑</div>
-      <div class="winner-name">${winnerName}</div>
-      <div class="muted">${winnerVotes} vote${winnerVotes!==1?'s':''} · ${pct}% of the room</div>
-    </div>`;
+    const topCount = winnerVotes;
+    const tied = Object.entries(tally).filter(([,cnt]) => cnt === topCount);
+    const isTie = tied.length > 1;
+    const pct = Math.round(topCount / Math.max(total,1) * 100);
+
+    if (isTie) {
+      const names = tied.map(([n], i) =>
+        `<div class="winner-name" style="font-size:22px;animation-delay:${0.2+i*0.15}s">${n}</div>`
+      ).join('');
+      winDiv.innerHTML = `<div class="tie-banner">
+        <div style="font-size:32px;margin-bottom:8px;animation:popIn 0.5s ease both">🏆</div>
+        <div style="font-size:16px;font-weight:600;color:var(--accent2);margin-bottom:6px;animation:slideInDown 0.4s ease both">It's a tie!</div>
+        ${names}
+        <div class="muted" style="margin-top:8px">${topCount} vote${topCount!==1?'s':''} each · ${pct}% of the room</div>
+      </div>`;
+      launchConfetti(['#c77dff','#70e1c8','#e8c547']);
+    } else {
+      winDiv.innerHTML = `<div class="winner-banner">
+        <div class="crown-icon">👑</div>
+        <div class="winner-name">${winnerName}</div>
+        <div class="muted" style="animation:fadeIn 0.5s ease 0.5s both">${winnerVotes} vote${winnerVotes!==1?'s':''} · ${pct}% of the room</div>
+      </div>`;
+      launchConfetti(['#e8c547','#f0d060','#fff']);
+    }
   } else {
-    winDiv.innerHTML = `<div class="card" style="text-align:center"><p class="muted">No votes cast</p></div>`;
+    winDiv.innerHTML = `<div class="card" style="text-align:center;animation:fadeIn 0.4s ease"><p class="muted">No votes this round</p></div>`;
   }
 
+  // Animated result bars — reveal with stagger
   const sorted = Object.entries(tally).sort((a,b) => b[1]-a[1]);
   gi('results-breakdown').innerHTML = '<span class="label">All votes</span>' +
     (sorted.length ? sorted.map(([name,cnt],i) => {
       const pct = Math.round(cnt/Math.max(total,1)*100);
-      return `<div class="result-item">
-        <div class="flex-between" style="font-size:14px;margin-bottom:3px">
+      return `<div class="result-item" style="animation-delay:${i*0.1}s">
+        <div class="flex-between" style="font-size:14px;margin-bottom:4px">
           <div class="flex-center">${avatar(name,24)}<span>${name}</span></div>
-          <span class="muted">${cnt} vote${cnt!==1?'s':''} · ${pct}%</span>
+          <span class="muted" style="animation:numberCount 0.4s ease ${i*0.1+0.3}s both;display:inline-block">${cnt} vote${cnt!==1?'s':''} · ${pct}%</span>
         </div>
-        <div class="result-bar"><div class="result-bar-fill${i===0?' gold':''}" style="width:${pct}%"></div></div>
+        <div class="result-bar">
+          <div class="result-bar-fill${i===0?' gold':''}" style="width:0%;transition:width 0.8s cubic-bezier(.25,.46,.45,.94) ${i*0.12+0.2}s" data-pct="${pct}"></div>
+        </div>
       </div>`;
     }).join('') : '<p class="muted" style="padding:8px 0">No votes this round</p>');
+
+  // Animate bars after DOM update
+  setTimeout(() => {
+    document.querySelectorAll('.result-bar-fill[data-pct]').forEach(el => {
+      el.style.width = el.dataset.pct + '%';
+    });
+  }, 50);
 }
 
 function renderFinal(scores) {
   const sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
   const medals = ['🥇','🥈','🥉'];
   gi('final-leaderboard').innerHTML = sorted.map(([name,score],i) => `
-    <div class="score-row${i===0?' top':''}">
-      <span class="rank">${medals[i]||(i+1)}</span>
+    <div class="score-row${i===0?' top':''}" style="opacity:0;animation:slideInUp 0.5s ease ${i*0.08}s both">
+      <span class="rank" style="animation:${i===0?'bounceIn 0.6s ease 0.3s both':'none'}">${medals[i]||(i+1)}</span>
       ${avatar(name,32)}
       <span class="sname">${name}${name===myName?' <span class="badge badge-teal" style="font-size:10px;padding:1px 8px">you</span>':''}</span>
-      <span class="svotes">${score} vote${score!==1?'s':''}</span>
+      <span class="svotes" style="animation:popIn 0.4s ease ${i*0.08+0.2}s both">${score} vote${score!==1?'s':''}</span>
     </div>`).join('');
+  // Big confetti for final
+  setTimeout(() => launchConfetti(['#e8c547','#c77dff','#70e1c8','#ff9eb5','#70b8ff'], 80), 400);
+}
+
+// ── Confetti ──
+function launchConfetti(colors = ['#e8c547','#c77dff','#70e1c8'], count = 45) {
+  // Remove old container
+  const old = document.getElementById('confetti-container');
+  if (old) old.remove();
+
+  const container = document.createElement('div');
+  container.id = 'confetti-container';
+  container.className = 'confetti-container';
+  document.body.appendChild(container);
+
+  const shapes = ['■','●','▲','★','◆'];
+  for (let i = 0; i < count; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.textContent = shapes[Math.floor(Math.random() * shapes.length)];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const size = Math.random() * 14 + 8;
+    const left = Math.random() * 100;
+    const duration = Math.random() * 2.5 + 1.5;
+    const delay = Math.random() * 0.8;
+    piece.style.cssText = `
+      left:${left}%;
+      color:${color};
+      font-size:${size}px;
+      animation-duration:${duration}s;
+      animation-delay:${delay}s;
+      opacity:0;
+    `;
+    container.appendChild(piece);
+  }
+  setTimeout(() => { if (container.parentNode) container.remove(); }, 4000);
+}
+
+// ── Animated screen transition ──
+function animateScreenIn(id) {
+  const screen = gi(id);
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  screen.classList.add('active');
+  screen.style.animation = 'none';
+  screen.offsetHeight; // reflow
+  screen.style.animation = '';
+}
+
+// ── Vote button ripple ──
+function addRipple(btn, e) {
+  const ripple = document.createElement('span');
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  ripple.style.cssText = `
+    position:absolute;width:${size}px;height:${size}px;
+    background:rgba(255,255,255,0.15);border-radius:50%;
+    left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;
+    transform:scale(0);animation:rippleAnim 0.5s ease;pointer-events:none;
+  `;
+  btn.style.position = 'relative';
+  btn.style.overflow = 'hidden';
+  btn.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 500);
+}
+
+// ── Question countdown overlay ──
+function showQuestionCountdown(questionNum, totalQ, cb) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:rgba(15,14,23,0.92);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    z-index:500;animation:fadeIn 0.3s ease;
+  `;
+  overlay.innerHTML = `
+    <div style="font-size:14px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Question ${questionNum} of ${totalQ}</div>
+    <div id="countdown-num" style="font-family:var(--serif);font-size:96px;color:var(--accent);line-height:1;animation:popIn 0.4s ease"></div>
+    <div style="margin-top:16px;color:var(--muted);font-size:13px">Get ready to vote...</div>
+  `;
+  document.body.appendChild(overlay);
+
+  let count = 3;
+  const numEl = overlay.querySelector('#countdown-num');
+  numEl.textContent = count;
+
+  const tick = setInterval(() => {
+    count--;
+    if (count <= 0) {
+      clearInterval(tick);
+      overlay.style.animation = 'fadeUp 0.3s ease reverse';
+      setTimeout(() => { overlay.remove(); cb(); }, 280);
+    } else {
+      numEl.style.animation = 'none';
+      numEl.offsetHeight;
+      numEl.style.animation = 'popIn 0.3s ease';
+      numEl.textContent = count;
+    }
+  }, 900);
 }
 
 async function resetGame() {
