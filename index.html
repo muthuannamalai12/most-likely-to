@@ -451,12 +451,22 @@ function renderLobbyPlayers(data) {
 }
 
 function startHostPoll() {
+  let lastPlayerCount = -1;
+  let lastPlayerNames = '';
+
   startPoll('host', '/games/' + gameCode, (data) => {
     if (!data) return;
     gameData = data;
 
     if (data.status === 'lobby') {
-      renderLobbyPlayers(data);
+      const players = sortedPlayers(data);
+      const namesKey = players.map(p => p.name).join(',');
+      // Only re-render if players actually changed
+      if (players.length !== lastPlayerCount || namesKey !== lastPlayerNames) {
+        lastPlayerCount = players.length;
+        lastPlayerNames = namesKey;
+        renderLobbyPlayers(data);
+      }
     }
 
     if (data.status === 'voting' && lastStatus !== 'voting') {
@@ -711,9 +721,24 @@ function startPlayerPoll() {
 
     // ── Lobby ──
     if (data.status === 'lobby') {
-      gi('player-lobby-count').textContent = players.length + ' players';
-      gi('player-lobby-list').innerHTML = players.map((p,i) =>
-        `<span class="player-chip lobby-enter" style="animation-delay:${i*0.05}s">${avatar(p.name)} ${p.name}</span>`).join('');
+      const namesKey = players.map(p=>p.name).join(',');
+      const countEl = gi('player-lobby-count');
+      // Only update DOM if something changed
+      if (countEl.dataset.lastNames !== namesKey) {
+        countEl.dataset.lastNames = namesKey;
+        countEl.textContent = players.length + ' players';
+        // Add only new players instead of full re-render
+        const existingNames = [...gi('player-lobby-list').querySelectorAll('.player-chip')].map(el => el.dataset.name);
+        players.forEach((p, i) => {
+          if (!existingNames.includes(p.name)) {
+            const chip = document.createElement('span');
+            chip.className = 'player-chip lobby-enter';
+            chip.dataset.name = p.name;
+            chip.innerHTML = avatar(p.name) + ' ' + p.name;
+            gi('player-lobby-list').appendChild(chip);
+          }
+        });
+      }
     }
 
     // ── Voting ──
@@ -1019,33 +1044,46 @@ function addRipple(btn, e) {
 
 // ── Question countdown overlay ──
 function showQuestionCountdown(questionNum, totalQ, cb) {
+  // Hide all screens first so nothing shows behind overlay
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+
   const overlay = document.createElement('div');
   overlay.style.cssText = `
-    position:fixed;inset:0;background:rgba(15,14,23,0.92);
+    position:fixed;inset:0;
+    background:var(--bg);
     display:flex;flex-direction:column;align-items:center;justify-content:center;
-    z-index:500;animation:fadeIn 0.3s ease;
+    z-index:500;
   `;
   overlay.innerHTML = `
-    <div style="font-size:14px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Question ${questionNum} of ${totalQ}</div>
-    <div id="countdown-num" style="font-family:var(--serif);font-size:96px;color:var(--accent);line-height:1;animation:popIn 0.4s ease"></div>
-    <div style="margin-top:16px;color:var(--muted);font-size:13px">Get ready to vote...</div>
+    <div style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;animation:fadeIn 0.3s ease">Question ${questionNum} of ${totalQ}</div>
+    <div style="width:180px;height:6px;background:var(--surface2);border-radius:3px;margin-bottom:28px;overflow:hidden">
+      <div style="height:100%;background:var(--accent);border-radius:3px;width:${Math.round((questionNum/totalQ)*100)}%;transition:width 0.5s ease"></div>
+    </div>
+    <div id="countdown-num" style="font-family:var(--serif);font-size:110px;color:var(--accent);line-height:1;animation:popIn 0.4s cubic-bezier(.36,.07,.19,.97)">3</div>
+    <div style="margin-top:20px;color:var(--muted);font-size:14px;animation:fadeIn 0.5s ease 0.2s both">Get ready to vote...</div>
   `;
   document.body.appendChild(overlay);
 
   let count = 3;
   const numEl = overlay.querySelector('#countdown-num');
-  numEl.textContent = count;
 
   const tick = setInterval(() => {
     count--;
     if (count <= 0) {
       clearInterval(tick);
-      overlay.style.animation = 'fadeUp 0.3s ease reverse';
-      setTimeout(() => { overlay.remove(); cb(); }, 280);
+      numEl.style.animation = 'none';
+      numEl.offsetHeight;
+      numEl.style.animation = 'popIn 0.25s ease';
+      numEl.textContent = '🗳️';
+      setTimeout(() => {
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.25s ease';
+        setTimeout(() => { overlay.remove(); cb(); }, 250);
+      }, 400);
     } else {
       numEl.style.animation = 'none';
       numEl.offsetHeight;
-      numEl.style.animation = 'popIn 0.3s ease';
+      numEl.style.animation = 'popIn 0.35s cubic-bezier(.36,.07,.19,.97)';
       numEl.textContent = count;
     }
   }, 900);
