@@ -37,6 +37,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
 @keyframes questionSlide{0%{opacity:0;transform:translateX(60px)}100%{opacity:1;transform:translateX(0)}}
 @keyframes staggerFadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes rippleAnim{0%{transform:scale(0);opacity:1}100%{transform:scale(2.5);opacity:0}}
+.none-btn{border-style:dashed !important;opacity:0.75}
+.none-btn:hover:not(:disabled){border-color:var(--danger) !important;background:rgba(255,107,107,0.08) !important;opacity:1}
+.none-btn.selected{border-color:var(--danger) !important;background:rgba(255,107,107,0.12) !important;color:var(--danger) !important;opacity:1}
 h1{font-family:var(--serif);font-size:36px;font-weight:400;line-height:1.1}
 h2{font-family:var(--serif);font-size:26px;font-weight:400;margin-bottom:16px}
 h3{font-size:17px;font-weight:500;margin-bottom:8px}
@@ -579,16 +582,22 @@ function hostLoadQuestion() {
     const existingVote = data.votes && data.votes['q'+qIdx] && data.votes['q'+qIdx][myName];
     if (existingVote) myVotedFor = existingVote;
 
-    gi('host-vote-options').innerHTML = players.map((p,i) =>
-      `<button class="vote-btn${p.name === myVotedFor ? ' selected' : ''}"
-        id="hvbtn_${p.name.replace(/\W/g,'_')}"
-        onclick="hostCastVote('${p.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}'); addRipple(this, event)"
+    const hostOpts = [...players.map(p=>p.name), '__none__'];
+    gi('host-vote-options').innerHTML = hostOpts.map((name,i) => {
+      const isNone = name === '__none__';
+      const isVoted = name === myVotedFor;
+      const safeId = isNone ? 'hvbtn___none__' : 'hvbtn_'+name.replace(/\W/g,'_');
+      const safeCall = isNone ? "__none__" : name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return `<button class="vote-btn${isVoted?' selected':''}${isNone?' none-btn':''}"
+        id="${safeId}"
+        onclick="hostCastVote('${safeCall}'); addRipple(this, event)"
         style="animation:staggerFadeUp 0.3s ease ${i*0.04}s both"
         ${myVotedFor ? 'disabled' : ''}>
-        ${avatar(p.name, 38)}<span>${p.name}</span>
-        ${p.name === myVotedFor ? '<span style="font-size:10px;color:var(--accent3)">✓ your vote</span>' : ''}
-      </button>`
-    ).join('');
+        ${isNone ? '<span style="font-size:28px">🚫</span>' : avatar(name, 38)}
+        <span>${isNone ? 'None' : name}</span>
+        ${isVoted ? '<span style="font-size:10px;color:var(--accent3)">✓ your vote</span>' : ''}
+      </button>`;
+    }).join('');
 
     gi('host-voted-msg').style.display = myVotedFor ? 'block' : 'none';
     showScreen('screen-host-vote');
@@ -630,11 +639,14 @@ async function hostShowResults() {
   const winnerName = sorted.length ? sorted[0][0] : null;
   const winnerVotes = sorted.length ? sorted[0][1] : 0;
 
-  // Update scores — give votes to ALL tied winners
-  if (winnerName && winnerVotes > 0) {
-    const tied = Object.entries(tally).filter(([,cnt]) => cnt === winnerVotes);
+  // Update scores — give votes to ALL tied winners (exclude None)
+  const playerTallyForScore = Object.fromEntries(Object.entries(tally).filter(([k]) => k !== '__none__'));
+  const playerSortedForScore = Object.entries(playerTallyForScore).sort((a,b) => b[1]-a[1]);
+  const topScore = playerSortedForScore.length ? playerSortedForScore[0][1] : 0;
+  if (topScore > 0) {
+    const tiedWinners = playerSortedForScore.filter(([,cnt]) => cnt === topScore);
     const scoreUpdate = {};
-    tied.forEach(([name, cnt]) => {
+    tiedWinners.forEach(([name, cnt]) => {
       scoreUpdate[name] = ((data.scores && data.scores[name]) || 0) + cnt;
     });
     await fbPatch('/games/' + gameCode + '/scores', scoreUpdate);
@@ -812,25 +824,34 @@ function renderPlayerVote(data, qIdx, alreadyVoted) {
   // Build vote buttons — ALL players including yourself
   const others = players;
 
+  const NONE_OPT = '__none__';
   const doRender = () => {
     if (alreadyVoted) {
-      gi('player-vote-options').innerHTML = others.map((p,i) => {
-        const isMyVote = p.name === myVotedFor;
-        return `<button class="vote-btn${isMyVote?' selected':''}" disabled style="animation:staggerFadeUp 0.3s ease ${i*0.04}s both">
-          ${avatar(p.name, 38)}<span>${p.name}</span>
+      const allOpts = [...others.map(p=>p.name), NONE_OPT];
+      gi('player-vote-options').innerHTML = allOpts.map((name,i) => {
+        const isNone = name === NONE_OPT;
+        const isMyVote = name === myVotedFor;
+        return `<button class="vote-btn${isMyVote?' selected':''}${isNone?' none-btn':''}" disabled style="animation:staggerFadeUp 0.3s ease ${i*0.04}s both">
+          ${isNone ? '<span style="font-size:28px">🚫</span>' : avatar(name, 38)}
+          <span>${isNone ? 'None' : name}</span>
           ${isMyVote ? '<span style="font-size:10px;color:var(--accent3)">✓ your vote</span>' : ''}
         </button>`;
       }).join('');
       gi('player-voted-msg').style.display = 'block';
     } else {
       gi('player-voted-msg').style.display = 'none';
-      gi('player-vote-options').innerHTML = others.map((p,i) =>
-        `<button class="vote-btn" id="vbtn_${p.name.replace(/\W/g,'_')}"
-          onclick="castVote('${p.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}'); addRipple(this, event)"
+      const allOpts = [...others.map(p=>p.name), NONE_OPT];
+      gi('player-vote-options').innerHTML = allOpts.map((name,i) => {
+        const isNone = name === NONE_OPT;
+        const safeId = isNone ? 'vbtn___none__' : 'vbtn_'+name.replace(/\W/g,'_');
+        const safeCall = isNone ? "__none__" : name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return `<button class="vote-btn${isNone?' none-btn':''}" id="${safeId}"
+          onclick="castVote('${safeCall}'); addRipple(this, event)"
           style="animation:staggerFadeUp 0.3s ease ${i*0.04}s both">
-          ${avatar(p.name, 38)}<span>${p.name}</span>
-        </button>`
-      ).join('');
+          ${isNone ? '<span style="font-size:28px">🚫</span>' : avatar(name, 38)}
+          <span>${isNone ? 'None' : name}</span>
+        </button>`;
+      }).join('');
     }
     showScreen('screen-player-vote');
     startPlayerTimer();
@@ -934,13 +955,23 @@ function renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes) {
   gi('results-q-num').textContent = 'Q'+(qIdx+1)+' of '+gameData.totalQ;
   gi('results-question').textContent = gameData.questions[qIdx] || '';
 
+  // Remove __none__ from winner calculation — None can't win
+  const playerTally = Object.fromEntries(Object.entries(tally).filter(([k]) => k !== '__none__'));
+  const playerSorted = Object.entries(playerTally).sort((a,b) => b[1]-a[1]);
+  const realWinnerName = playerSorted.length ? playerSorted[0][0] : null;
+  const realWinnerVotes = playerSorted.length ? playerSorted[0][1] : 0;
+  // Override for display
+  const winnerName2 = realWinnerName;
+  const winnerVotes2 = realWinnerVotes;
+
   const winDiv = gi('results-winner');
-  if (winnerName) {
-    const topCount = winnerVotes;
-    const tied = Object.entries(tally).filter(([,cnt]) => cnt === topCount);
+  if (winnerName2) {
+    const topCount = winnerVotes2;
+    const tied = Object.entries(playerTally).filter(([,cnt]) => cnt === topCount);
     const isTie = tied.length > 1;
     const pct = Math.round(topCount / Math.max(total,1) * 100);
 
+    const pct2 = Math.round(topCount / Math.max(total,1) * 100);
     if (isTie) {
       const names = tied.map(([n], i) =>
         `<div class="winner-name" style="font-size:22px;animation-delay:${0.2+i*0.15}s">${n}</div>`
@@ -949,14 +980,14 @@ function renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes) {
         <div style="font-size:32px;margin-bottom:8px;animation:popIn 0.5s ease both">🏆</div>
         <div style="font-size:16px;font-weight:600;color:var(--accent2);margin-bottom:6px;animation:slideInDown 0.4s ease both">It's a tie!</div>
         ${names}
-        <div class="muted" style="margin-top:8px">${topCount} vote${topCount!==1?'s':''} each · ${pct}% of the room</div>
+        <div class="muted" style="margin-top:8px">${topCount} vote${topCount!==1?'s':''} each · ${pct2}% of the room</div>
       </div>`;
       launchConfetti(['#c77dff','#70e1c8','#e8c547']);
     } else {
       winDiv.innerHTML = `<div class="winner-banner">
         <div class="crown-icon">👑</div>
-        <div class="winner-name">${winnerName}</div>
-        <div class="muted" style="animation:fadeIn 0.5s ease 0.5s both">${winnerVotes} vote${winnerVotes!==1?'s':''} · ${pct}% of the room</div>
+        <div class="winner-name">${winnerName2}</div>
+        <div class="muted" style="animation:fadeIn 0.5s ease 0.5s both">${winnerVotes2} vote${winnerVotes2!==1?'s':''} · ${pct2}% of the room</div>
       </div>`;
       launchConfetti(['#e8c547','#f0d060','#fff']);
     }
@@ -967,11 +998,13 @@ function renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes) {
   // Animated result bars — reveal with stagger
   const sorted = Object.entries(tally).sort((a,b) => b[1]-a[1]);
 
-  // Always show all players sorted by votes, even those with 0 votes
+  // Show all players sorted by votes (exclude __none__ from player list)
   const allPlayers = sortedPlayers(gameData);
   const fullTally = {};
   allPlayers.forEach(p => { fullTally[p.name] = tally[p.name] || 0; });
   const fullSorted = Object.entries(fullTally).sort((a,b) => b[1]-a[1]);
+  const noneCnt = tally['__none__'] || 0;
+  const nonePct = total > 0 ? Math.round(noneCnt/total*100) : 0;
 
   gi('results-breakdown').innerHTML = '<span class="label">All votes</span>' +
     fullSorted.map(([name,cnt],i) => {
@@ -985,7 +1018,17 @@ function renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes) {
           <div class="result-bar-fill${i===0&&cnt>0?' gold':''}" style="width:0%;transition:width 0.8s cubic-bezier(.25,.46,.45,.94) ${i*0.1+0.2}s" data-pct="${pct}"></div>
         </div>
       </div>`;
-    }).join('');
+    }).join('') +
+    // Always show None row at the bottom
+    `<div class="result-item" style="animation-delay:${fullSorted.length*0.08}s;opacity:0.7">
+      <div class="flex-between" style="font-size:14px;margin-bottom:4px">
+        <div class="flex-center"><span style="font-size:18px;width:24px;text-align:center">🚫</span><span>None</span></div>
+        <span class="muted">${noneCnt} vote${noneCnt!==1?'s':''} · ${nonePct}%</span>
+      </div>
+      <div class="result-bar">
+        <div class="result-bar-fill" style="width:0%;background:var(--muted);transition:width 0.8s cubic-bezier(.25,.46,.45,.94) ${fullSorted.length*0.1+0.2}s" data-pct="${nonePct}"></div>
+      </div>
+    </div>`;
 
   // Animate bars after DOM update
   setTimeout(() => {
