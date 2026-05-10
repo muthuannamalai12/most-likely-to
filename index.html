@@ -67,12 +67,12 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .player-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .player-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 6px;border:1px solid var(--border);border-radius:999px;font-size:13px;background:var(--surface2)}
 .avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0}
-.vote-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.vote-grid{display:grid;gap:6px;margin-bottom:8px}
 .vote-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);cursor:pointer;color:var(--text);font-size:13px;font-weight:500;transition:all .15s;text-align:center;min-height:80px;width:100%}
 .vote-btn:hover{border-color:var(--border2);background:var(--surface2);transform:translateY(-1px)}
 .vote-btn.selected{border-color:var(--accent2);background:rgba(199,125,255,.12);color:var(--accent2)}
-.result-item{margin-bottom:12px}
-.result-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:4px}
+.result-item{margin-bottom:8px}
+.result-bar{height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:3px}
 .result-bar-fill{height:100%;background:var(--accent2);border-radius:3px;transition:width .7s ease}
 .result-bar-fill.gold{background:var(--accent)}
 .winner-banner{background:linear-gradient(135deg,rgba(232,197,71,.12),rgba(199,125,255,.12));border:1px solid rgba(232,197,71,.35);border-radius:var(--radius);padding:28px 24px;text-align:center;margin-bottom:12px;animation:winnerGlow 2s ease-in-out infinite;position:relative;overflow:hidden}
@@ -80,17 +80,17 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .winner-name{font-family:var(--serif);font-size:32px;color:var(--accent);margin:10px 0 6px;animation:bounceIn 0.6s cubic-bezier(.36,.07,.19,.97) both}
 .crown-icon{font-size:36px;animation:crownDrop 0.7s cubic-bezier(.36,.07,.19,.97) both;display:inline-block}
 .tie-banner{background:linear-gradient(135deg,rgba(199,125,255,.12),rgba(112,225,200,.12));border:1px solid rgba(199,125,255,.35);border-radius:var(--radius);padding:28px 24px;text-align:center;margin-bottom:12px;animation:winnerGlow 2s ease-in-out infinite}
-.score-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;background:var(--surface2);transition:all 0.3s}
+.score-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:5px;background:var(--surface2);transition:all 0.3s}
 .score-row.top{border-color:rgba(232,197,71,.3);background:rgba(232,197,71,.06)}
 .score-row .rank{font-size:18px;width:28px;text-align:center;flex-shrink:0}
 .score-row .sname{flex:1;font-weight:500}
 .score-row .svotes{font-weight:600;color:var(--accent);font-size:15px}
-.vote-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:14px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);cursor:pointer;color:var(--text);font-size:13px;font-weight:500;transition:all .2s cubic-bezier(.34,1.56,.64,1);text-align:center;min-height:80px;width:100%}
-.vote-btn:hover:not(:disabled){border-color:var(--accent2);background:rgba(199,125,255,.08);transform:translateY(-3px) scale(1.02);box-shadow:0 8px 20px rgba(0,0,0,.3)}
+.vote-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 6px;border:1px solid var(--border);border-radius:10px;background:var(--surface);cursor:pointer;color:var(--text);font-size:12px;font-weight:500;transition:all .2s cubic-bezier(.34,1.56,.64,1);text-align:center;min-height:64px;width:100%}
+.vote-btn:hover:not(:disabled){border-color:var(--accent2);background:rgba(199,125,255,.08);transform:translateY(-2px) scale(1.02);box-shadow:0 6px 16px rgba(0,0,0,.3)}
 .vote-btn:active:not(:disabled){transform:scale(0.96)}
-.vote-btn.selected{border-color:var(--accent2);background:rgba(199,125,255,.15);color:var(--accent2);transform:scale(1.03)}
+.vote-btn.selected{border-color:var(--accent2);background:rgba(199,125,255,.15);color:var(--accent2);transform:scale(1.02)}
 .question-card{animation:questionSlide 0.5s cubic-bezier(.25,.46,.45,.94) both}
-.result-item{opacity:0;animation:staggerFadeUp 0.4s ease forwards}
+.result-item{opacity:0;animation:staggerFadeUp 0.4s ease forwards;margin-bottom:8px}
 .confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9998;overflow:hidden}
 .confetti-piece{position:absolute;width:10px;height:10px;top:-10px;animation:confettiFall linear forwards}
 .timer-big{font-family:var(--serif);font-size:52px;color:var(--accent);text-align:center;line-height:1;margin:8px 0;transition:color .3s}
@@ -105,7 +105,7 @@ button:disabled{opacity:.35;cursor:not-allowed}
 .q-item{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;font-size:13px;background:var(--surface2)}
 .q-item .q-text{flex:1;line-height:1.4}
 .q-item button{border:none;background:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 2px;flex-shrink:0}
-.score-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;background:var(--surface2)}
+.score-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:5px;background:var(--surface2)}
 .score-row.top{border-color:rgba(232,197,71,.3);background:rgba(232,197,71,.06)}
 .score-row .rank{font-size:18px;width:28px;text-align:center;flex-shrink:0}
 .score-row .sname{flex:1;font-weight:500}
@@ -594,6 +594,8 @@ function hostLoadQuestion() {
     if (existingVote) myVotedFor = existingVote;
 
     const hostOpts = [...players.map(p=>p.name), '__none__'];
+    const hAvSize = voteAvatarSize(hostOpts.length);
+    const hNoneSize = Math.max(20, hAvSize - 4);
     gi('host-vote-options').innerHTML = hostOpts.map((name,i) => {
       const isNone = name === '__none__';
       const isVoted = name === myVotedFor;
@@ -604,13 +606,15 @@ function hostLoadQuestion() {
         onclick="hostCastVote('${safeCall}'); addRipple(this, event)"
         style="animation:staggerFadeUp 0.3s ease ${i*0.04}s both"
         ${myVotedFor ? 'disabled' : ''}>
-        ${isNone ? '<span style="font-size:28px">🚫</span>' : avatar(name, 38)}
-        <span>${isNone ? 'None' : name}</span>
-        ${isVoted ? '<span style="font-size:10px;color:var(--accent3)">✓ your vote</span>' : ''}
+        ${isNone ? `<span style="font-size:${hNoneSize}px">🚫</span>` : avatar(name, hAvSize)}
+        <span style="font-size:11px;line-height:1.2;word-break:break-word">${isNone ? 'None' : name}</span>
+        ${isVoted ? '<span style="font-size:9px;color:var(--accent3)">✓ voted</span>' : ''}
       </button>`;
     }).join('');
 
     gi('host-voted-msg').style.display = myVotedFor ? 'block' : 'none';
+    // Set responsive columns based on total options (players + None)
+    setVoteGridCols('host-vote-options', hostOpts.length);
     showScreen('screen-host-vote');
     startHostTimer();
   });
@@ -644,11 +648,13 @@ async function hostShowResults() {
   const votes = (data.votes && data.votes['q'+qIdx]) || {};
   const tally = {};
   Object.values(votes).forEach(v => { tally[v] = (tally[v]||0)+1; });
-  const sorted = Object.entries(tally).sort((a,b) => b[1]-a[1]);
   const total = Object.values(votes).length;
   const isLast = qIdx >= data.totalQ - 1;
-  const winnerName = sorted.length ? sorted[0][0] : null;
-  const winnerVotes = sorted.length ? sorted[0][1] : 0;
+  // Always exclude __none__ when picking winner
+  const playerOnlyTally = Object.fromEntries(Object.entries(tally).filter(([k]) => k !== '__none__'));
+  const playerOnlySorted = Object.entries(playerOnlyTally).sort((a,b) => b[1]-a[1]);
+  const winnerName = playerOnlySorted.length && playerOnlySorted[0][1] > 0 ? playerOnlySorted[0][0] : null;
+  const winnerVotes = winnerName ? playerOnlySorted[0][1] : 0;
 
   // Update scores — give votes to ALL tied winners (exclude None)
   const playerTallyForScore = Object.fromEntries(Object.entries(tally).filter(([k]) => k !== '__none__'));
@@ -665,6 +671,8 @@ async function hostShowResults() {
     Object.assign(gameData.scores, scoreUpdate);
   }
 
+  // Make sure gameData is fully updated before rendering
+  gameData = data;
   await fbPatch('/games/' + gameCode, { status: 'results' });
   renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes);
   showScreen('screen-results');
@@ -799,11 +807,13 @@ function startPlayerPoll() {
         const votes = (data.votes && data.votes['q'+qIdx]) || {};
         const tally = {};
         Object.values(votes).forEach(v => { tally[v] = (tally[v]||0)+1; });
-        const sorted = Object.entries(tally).sort((a,b) => b[1]-a[1]);
         const total = Object.values(votes).length;
         const isLast = qIdx >= data.totalQ - 1;
-        const winnerName = sorted.length ? sorted[0][0] : null;
-        const winnerVotes = sorted.length ? sorted[0][1] : 0;
+        // Exclude __none__ from winner
+        const pOnlyTally = Object.fromEntries(Object.entries(tally).filter(([k]) => k !== '__none__'));
+        const pOnlySorted = Object.entries(pOnlyTally).sort((a,b) => b[1]-a[1]);
+        const winnerName = pOnlySorted.length && pOnlySorted[0][1] > 0 ? pOnlySorted[0][0] : null;
+        const winnerVotes = winnerName ? pOnlySorted[0][1] : 0;
         renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes);
         showScreen('screen-results');
         gi('results-nav-btn').innerHTML = isLast
@@ -837,21 +847,22 @@ function renderPlayerVote(data, qIdx, alreadyVoted) {
 
   const NONE_OPT = '__none__';
   const doRender = () => {
+    const avSize = voteAvatarSize(others.length + 1);
+    const noneIconSize = Math.max(20, avSize - 4);
+    const allOpts = [...others.map(p=>p.name), NONE_OPT];
     if (alreadyVoted) {
-      const allOpts = [...others.map(p=>p.name), NONE_OPT];
       gi('player-vote-options').innerHTML = allOpts.map((name,i) => {
         const isNone = name === NONE_OPT;
         const isMyVote = name === myVotedFor;
         return `<button class="vote-btn${isMyVote?' selected':''}${isNone?' none-btn':''}" disabled style="animation:staggerFadeUp 0.3s ease ${i*0.04}s both">
-          ${isNone ? '<span style="font-size:28px">🚫</span>' : avatar(name, 38)}
-          <span>${isNone ? 'None' : name}</span>
-          ${isMyVote ? '<span style="font-size:10px;color:var(--accent3)">✓ your vote</span>' : ''}
+          ${isNone ? `<span style="font-size:${noneIconSize}px">🚫</span>` : avatar(name, avSize)}
+          <span style="font-size:11px;line-height:1.2;word-break:break-word">${isNone ? 'None' : name}</span>
+          ${isMyVote ? '<span style="font-size:9px;color:var(--accent3)">✓ voted</span>' : ''}
         </button>`;
       }).join('');
       gi('player-voted-msg').style.display = 'block';
     } else {
       gi('player-voted-msg').style.display = 'none';
-      const allOpts = [...others.map(p=>p.name), NONE_OPT];
       gi('player-vote-options').innerHTML = allOpts.map((name,i) => {
         const isNone = name === NONE_OPT;
         const safeId = isNone ? 'vbtn___none__' : 'vbtn_'+name.replace(/\W/g,'_');
@@ -859,11 +870,13 @@ function renderPlayerVote(data, qIdx, alreadyVoted) {
         return `<button class="vote-btn${isNone?' none-btn':''}" id="${safeId}"
           onclick="castVote('${safeCall}'); addRipple(this, event)"
           style="animation:staggerFadeUp 0.3s ease ${i*0.04}s both">
-          ${isNone ? '<span style="font-size:28px">🚫</span>' : avatar(name, 38)}
-          <span>${isNone ? 'None' : name}</span>
+          ${isNone ? `<span style="font-size:${noneIconSize}px">🚫</span>` : avatar(name, avSize)}
+          <span style="font-size:11px;line-height:1.2;word-break:break-word">${isNone ? 'None' : name}</span>
         </button>`;
       }).join('');
     }
+    // Set responsive columns based on total options (players + None)
+    setVoteGridCols('player-vote-options', others.length + 1);
     showScreen('screen-player-vote');
     startPlayerTimer();
   };
@@ -966,15 +979,11 @@ function renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes) {
   gi('results-q-num').textContent = 'Q'+(qIdx+1)+' of '+gameData.totalQ;
   gi('results-question').textContent = gameData.questions[qIdx] || '';
 
-  // Remove __none__ from winner calculation — None can't win
-  const playerTally = Object.fromEntries(Object.entries(tally).filter(([k]) => k !== '__none__'));
-  const playerSorted = Object.entries(playerTally).sort((a,b) => b[1]-a[1]);
+  // Use passed winnerName directly (already filtered of __none__ by caller)
   const noneCnt2 = tally['__none__'] || 0;
   const allVotedNone = total > 0 && noneCnt2 === total;
-  const realWinnerName = playerSorted.length && playerSorted[0][1] > 0 ? playerSorted[0][0] : null;
-  const realWinnerVotes = realWinnerName ? playerSorted[0][1] : 0;
-  const winnerName2 = realWinnerName;
-  const winnerVotes2 = realWinnerVotes;
+  const winnerName2 = winnerName;
+  const winnerVotes2 = winnerVotes;
 
   const winDiv = gi('results-winner');
   if (allVotedNone) {
@@ -1017,7 +1026,7 @@ function renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes) {
   // Animated result bars — reveal with stagger
   const sorted = Object.entries(tally).sort((a,b) => b[1]-a[1]);
 
-  // Show all players sorted by votes (exclude __none__ from player list)
+  // Build full tally: all players + None row (exclude __none__ key from player list)
   const allPlayers = sortedPlayers(gameData);
   const fullTally = {};
   allPlayers.forEach(p => { fullTally[p.name] = tally[p.name] || 0; });
@@ -1025,29 +1034,30 @@ function renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes) {
   const noneCnt = tally['__none__'] || 0;
   const nonePct = total > 0 ? Math.round(noneCnt/total*100) : 0;
 
-  gi('results-breakdown').innerHTML = '<span class="label">All votes</span>' +
-    fullSorted.map(([name,cnt],i) => {
-      const pct = total > 0 ? Math.round(cnt/total*100) : 0;
-      return `<div class="result-item" style="animation-delay:${i*0.08}s">
-        <div class="flex-between" style="font-size:14px;margin-bottom:4px">
-          <div class="flex-center">${avatar(name,24)}<span>${name}</span></div>
-          <span class="muted" style="animation:numberCount 0.4s ease ${i*0.08+0.3}s both;display:inline-block">${cnt} vote${cnt!==1?'s':''} · ${pct}%</span>
-        </div>
-        <div class="result-bar">
-          <div class="result-bar-fill${i===0&&cnt>0?' gold':''}" style="width:0%;transition:width 0.8s cubic-bezier(.25,.46,.45,.94) ${i*0.1+0.2}s" data-pct="${pct}"></div>
-        </div>
-      </div>`;
-    }).join('') +
-    // Always show None row at the bottom
-    `<div class="result-item" style="animation-delay:${fullSorted.length*0.08}s;opacity:0.7">
+  const playerRows = fullSorted.map(([name,cnt],i) => {
+    const pct = total > 0 ? Math.round(cnt/total*100) : 0;
+    return `<div class="result-item" style="animation-delay:${i*0.08}s">
       <div class="flex-between" style="font-size:14px;margin-bottom:4px">
-        <div class="flex-center"><span style="font-size:18px;width:24px;text-align:center">🚫</span><span>None</span></div>
-        <span class="muted">${noneCnt} vote${noneCnt!==1?'s':''} · ${nonePct}%</span>
+        <div class="flex-center">${avatar(name,24)}<span>${name}</span></div>
+        <span class="muted" style="animation:numberCount 0.4s ease ${i*0.08+0.3}s both;display:inline-block">${cnt} vote${cnt!==1?'s':''} · ${pct}%</span>
       </div>
       <div class="result-bar">
-        <div class="result-bar-fill" style="width:0%;background:var(--muted);transition:width 0.8s cubic-bezier(.25,.46,.45,.94) ${fullSorted.length*0.1+0.2}s" data-pct="${nonePct}"></div>
+        <div class="result-bar-fill${i===0&&cnt>0?' gold':''}" style="width:0%;transition:width 0.8s cubic-bezier(.25,.46,.45,.94) ${i*0.1+0.2}s" data-pct="${pct}"></div>
       </div>
     </div>`;
+  }).join('');
+
+  const noneRow = `<div class="result-item" style="animation-delay:${fullSorted.length*0.08}s;opacity:0.75">
+    <div class="flex-between" style="font-size:14px;margin-bottom:4px">
+      <div class="flex-center"><span style="font-size:18px;width:24px;text-align:center">🚫</span><span style="color:var(--muted)">None</span></div>
+      <span class="muted">${noneCnt} vote${noneCnt!==1?'s':''} · ${nonePct}%</span>
+    </div>
+    <div class="result-bar">
+      <div class="result-bar-fill" style="width:0%;background:rgba(255,255,255,0.2);transition:width 0.8s cubic-bezier(.25,.46,.45,.94) ${fullSorted.length*0.1+0.2}s" data-pct="${nonePct}"></div>
+    </div>
+  </div>`;
+
+  gi('results-breakdown').innerHTML = '<span class="label">All votes</span>' + playerRows + noneRow;
 
   // Animate bars after DOM update
   setTimeout(() => {
@@ -1089,6 +1099,27 @@ function renderFinal(scores) {
   if (!allZero) {
     setTimeout(() => launchConfetti(['#e8c547','#c77dff','#70e1c8','#ff9eb5','#70b8ff'], 80), 400);
   }
+}
+
+// ── Adaptive avatar size for vote buttons ──
+function voteAvatarSize(totalPlayers) {
+  if (totalPlayers <= 8)  return 38;
+  if (totalPlayers <= 16) return 32;
+  if (totalPlayers <= 24) return 26;
+  return 22;
+}
+
+// ── Responsive vote grid ──
+function setVoteGridCols(containerId, count) {
+  const el = gi(containerId);
+  if (!el) return;
+  // Adaptive columns based on player count
+  let cols;
+  if (count <= 6)       cols = 2;
+  else if (count <= 12) cols = 3;
+  else if (count <= 20) cols = 4;
+  else                  cols = 5;
+  el.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 }
 
 // ── Confetti ──
