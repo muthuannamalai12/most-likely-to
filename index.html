@@ -495,8 +495,6 @@ function startHostPoll() {
 }
 
 function startHostVotePoll() {
-  let advancedForQ = -1; // track which question we already advanced for
-
   startPoll('host-vote', '/games/' + gameCode, (data) => {
     if (!data) return;
     gameData = data;
@@ -506,26 +504,16 @@ function startHostVotePoll() {
     const voteCount = Object.keys(votes).length;
 
     if (data.status === 'voting') {
-      // Update tally display
       gi('host-vote-received').textContent = voteCount + ' / ' + players.length;
       gi('vote-progress-fill').style.width = Math.round(voteCount / Math.max(players.length,1) * 100) + '%';
       updateLiveTally(votes);
 
-      // Auto-advance when all voted - use per-question flag only
-      if (voteCount >= players.length && advancedForQ !== qIdx) {
-        advancedForQ = qIdx;
+      // Auto-advance: all votes in AND we haven't shown results for this question yet
+      if (voteCount >= players.length && lastStatus !== 'results_' + qIdx) {
         clearInterval(timerInterval);
         stopPoll('host-vote');
-        hostShowResults();
+        hostShowResults(); // sets lastStatus = 'results_'+qIdx immediately
       }
-    }
-
-    if (data.status === 'results' && lastStatus !== 'results_' + qIdx) {
-      lastStatus = 'results_' + qIdx;
-      advancedForQ = qIdx;
-      clearInterval(timerInterval);
-      stopPoll('host-vote');
-      hostShowResults();
     }
 
     if (data.status === 'final' && lastStatus !== 'final') {
@@ -563,7 +551,7 @@ function updateLiveTally(votes) {
 }
 
 async function startGame() {
-  lastStatus = 'voting'; lastQShown = 0;
+  lastStatus = 'voting_0'; lastQShown = 0;
   await fbPatch('/games/' + gameCode, { status: 'voting', currentQ: 0, startedAt: ts() });
   const fresh = await fbGet('/games/' + gameCode);
   gameData = fresh;
@@ -633,7 +621,9 @@ function startHostTimer() {
     if (t <= 0) {
       clearInterval(timerInterval);
       stopPoll('host-vote');
-      hostShowResults();
+      if (lastStatus !== 'results_' + gameData.currentQ) {
+        hostShowResults();
+      }
     }
   }, 1000);
 }
@@ -694,7 +684,8 @@ function hostShowResults() {
 
 async function hostNextQ() {
   const nextQ = gameData.currentQ + 1;
-  lastStatus = 'voting'; lastQShown = nextQ;
+  lastStatus = 'voting_' + nextQ; // reset so next question can advance
+  lastQShown = nextQ;
   await fbPatch('/games/' + gameCode, { status: 'voting', currentQ: nextQ });
   const fresh = await fbGet('/games/' + gameCode);
   gameData = fresh;
