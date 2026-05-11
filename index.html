@@ -356,7 +356,7 @@ const COLORS = [
 
 // ── State ──
 let myName = '', gameCode = '', isHost = false;
-let gameData = null, timerInterval = null;
+let gameData = null, timerInterval = null, playerTimerInterval = null;
 let customQuestions = [];
 let colorMap = {};
 let lastQShown = -1;
@@ -495,6 +495,8 @@ function startHostPoll() {
 }
 
 function startHostVotePoll() {
+  let advancedForQ = -1; // track which question we already advanced for
+
   startPoll('host-vote', '/games/' + gameCode, (data) => {
     if (!data) return;
     gameData = data;
@@ -504,23 +506,23 @@ function startHostVotePoll() {
     const voteCount = Object.keys(votes).length;
 
     if (data.status === 'voting') {
+      // Update tally display
       gi('host-vote-received').textContent = voteCount + ' / ' + players.length;
       gi('vote-progress-fill').style.width = Math.round(voteCount / Math.max(players.length,1) * 100) + '%';
       updateLiveTally(votes);
-      // Auto-advance when all voted (use flag to prevent double-firing)
-      if (voteCount >= players.length && !window._showingResults) {
-        window._showingResults = true;
+
+      // Auto-advance when all voted - use per-question flag only
+      if (voteCount >= players.length && advancedForQ !== qIdx) {
+        advancedForQ = qIdx;
         clearInterval(timerInterval);
         stopPoll('host-vote');
-        setTimeout(() => {
-          hostShowResults();
-          window._showingResults = false;
-        }, 600);
+        hostShowResults();
       }
     }
 
     if (data.status === 'results' && lastStatus !== 'results_' + qIdx) {
       lastStatus = 'results_' + qIdx;
+      advancedForQ = qIdx;
       clearInterval(timerInterval);
       stopPoll('host-vote');
       hostShowResults();
@@ -531,12 +533,6 @@ function startHostVotePoll() {
       stopAllPolls();
       renderFinal(data.scores || {});
       showScreen('screen-final');
-    }
-
-    // Next question
-    if (data.status === 'voting' && data.currentQ !== qIdx && lastQShown !== data.currentQ) {
-      lastQShown = data.currentQ;
-      hostLoadQuestion();
     }
   });
 }
@@ -583,9 +579,6 @@ function hostLoadQuestion() {
   const q = data.questions[qIdx];
   const num = qIdx + 1; const total = data.totalQ;
   const players = sortedPlayers(data);
-
-  // Reset results flag for new question
-  window._showingResults = false;
 
   // Show countdown then reveal question
   showQuestionCountdown(num, total, () => {
@@ -640,22 +633,28 @@ function startHostTimer() {
     if (t <= 0) {
       clearInterval(timerInterval);
       stopPoll('host-vote');
-      if (!window._showingResults) {
-        window._showingResults = true;
-        hostShowResults().finally(() => { window._showingResults = false; });
-      }
+      hostShowResults();
     }
   }, 1000);
 }
 
 async function hostShowResults() {
   clearInterval(timerInterval);
+  stopPoll('host-vote'); // ensure poll is stopped
 
-  // Set lastStatus immediately to prevent poll from double-triggering
-  const qIdxNow = gameData.currentQ;
-  lastStatus = 'results_' + qIdxNow;
+  // Set lastStatus to prevent any re-trigger
+  lastStatus = 'results_' + gameData.currentQ;
 
-  // Always fetch fresh data from Firebase so we have all votes including host's
+  // Show loading state immediately so screen moves right away
+  document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.visibility = ''; });
+  gi('screen-results').classList.add('active');
+  gi('results-q-num').textContent = 'Q' + (gameData.currentQ+1) + ' of ' + gameData.totalQ;
+  gi('results-question').textContent = gameData.questions[gameData.currentQ] || '';
+  gi('results-winner').innerHTML = '<div class="card" style="text-align:center;padding:28px"><div style="font-size:28px;margin-bottom:8px">⏳</div><p class="muted">Counting votes...</p></div>';
+  gi('results-breakdown').innerHTML = '';
+  gi('results-nav-btn').innerHTML = '';
+
+  // Fetch fresh data from Firebase
   let data = gameData;
   try {
     const fresh = await fbGet('/games/' + gameCode);
@@ -822,7 +821,7 @@ function startPlayerPoll() {
       lastPlayerQShown = qIdx; // sync up so next question triggers correctly
       if (lastPlayerStatus !== 'results_' + qIdx) {
         lastPlayerStatus = 'results_' + qIdx;
-        clearInterval(timerInterval);
+        clearInterval(playerTimerInterval);
         const votes = (data.votes && data.votes['q'+qIdx]) || {};
         const tally = {};
         Object.values(votes).forEach(v => { tally[v] = (tally[v]||0)+1; });
@@ -852,7 +851,7 @@ function startPlayerPoll() {
 }
 
 function renderPlayerVote(data, qIdx, alreadyVoted) {
-  clearInterval(timerInterval);
+  clearInterval(playerTimerInterval);
   const players = sortedPlayers(data);
   const q = data.questions[qIdx];
   const num = qIdx + 1; const total = data.totalQ;
@@ -976,16 +975,16 @@ async function hostCastVote(name) {
 }
 
 function startPlayerTimer() {
-  clearInterval(timerInterval);
+  clearInterval(playerTimerInterval);
   let t = gameData.timerSecs;
   const badge = gi('player-timer-badge');
   badge.textContent = t+'s'; badge.className = 'badge badge-yellow';
-  timerInterval = setInterval(() => {
+  playerTimerInterval = setInterval(() => {
     t--;
     badge.textContent = t+'s';
     if (t <= 5) badge.className = 'badge badge-red';
     if (t <= 0) {
-      clearInterval(timerInterval);
+      clearInterval(playerTimerInterval);
       gi('player-voted-msg').style.display = 'block';
       gi('player-voted-msg').innerHTML = '<span class="badge badge-red">⏱ Time\'s up — waiting for results</span>';
       document.querySelectorAll('.vote-btn').forEach(b => b.disabled = true);
@@ -1254,6 +1253,7 @@ function showQuestionCountdown(questionNum, totalQ, cb) {
 
 async function resetGame() {
   clearInterval(timerInterval);
+  clearInterval(playerTimerInterval);
   stopAllPolls();
 
   // Delete game from Firebase if host
