@@ -1012,9 +1012,11 @@ function renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes) {
   const winnerName2 = winnerName;
   const winnerVotes2 = winnerVotes;
 
+  // Build playerTally (exclude __none__) for tie detection
+  const playerTally = Object.fromEntries(Object.entries(tally).filter(([k]) => k !== '__none__'));
+
   const winDiv = gi('results-winner');
   if (allVotedNone) {
-    // Everyone voted None
     winDiv.innerHTML = `<div class="card" style="text-align:center;padding:28px;animation:fadeIn 0.4s ease">
       <div style="font-size:36px;margin-bottom:10px">🚫</div>
       <div style="font-size:18px;font-weight:500;margin-bottom:6px">No winner this round</div>
