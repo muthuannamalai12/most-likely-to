@@ -638,42 +638,27 @@ function startHostTimer() {
   }, 1000);
 }
 
-async function hostShowResults() {
+function hostShowResults() {
   clearInterval(timerInterval);
-  stopPoll('host-vote'); // ensure poll is stopped
+  stopPoll('host-vote');
 
   // Set lastStatus to prevent any re-trigger
   lastStatus = 'results_' + gameData.currentQ;
 
-  // Show loading state immediately so screen moves right away
-  document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.visibility = ''; });
-  gi('screen-results').classList.add('active');
-  gi('results-q-num').textContent = 'Q' + (gameData.currentQ+1) + ' of ' + gameData.totalQ;
-  gi('results-question').textContent = gameData.questions[gameData.currentQ] || '';
-  gi('results-winner').innerHTML = '<div class="card" style="text-align:center;padding:28px"><div style="font-size:28px;margin-bottom:8px">⏳</div><p class="muted">Counting votes...</p></div>';
-  gi('results-breakdown').innerHTML = '';
-  gi('results-nav-btn').innerHTML = '';
-
-  // Fetch fresh data from Firebase
-  let data = gameData;
-  try {
-    const fresh = await fbGet('/games/' + gameCode);
-    if (fresh) { data = fresh; gameData = fresh; }
-  } catch(e) { console.warn('Could not refresh before results:', e); }
-
+  // Use gameData directly - poll keeps it fresh every 2s
+  const data = gameData;
   const qIdx = data.currentQ;
   const votes = (data.votes && data.votes['q'+qIdx]) || {};
   const tally = {};
   Object.values(votes).forEach(v => { tally[v] = (tally[v]||0)+1; });
   const total = Object.values(votes).length;
   const isLast = qIdx >= data.totalQ - 1;
-  // Always exclude __none__ when picking winner
   const playerOnlyTally = Object.fromEntries(Object.entries(tally).filter(([k]) => k !== '__none__'));
   const playerOnlySorted = Object.entries(playerOnlyTally).sort((a,b) => b[1]-a[1]);
   const winnerName = playerOnlySorted.length && playerOnlySorted[0][1] > 0 ? playerOnlySorted[0][0] : null;
   const winnerVotes = winnerName ? playerOnlySorted[0][1] : 0;
 
-  // Update scores — give votes to ALL tied winners (exclude None)
+  // Update scores — fire and forget (non-blocking)
   const playerTallyForScore = Object.fromEntries(Object.entries(tally).filter(([k]) => k !== '__none__'));
   const playerSortedForScore = Object.entries(playerTallyForScore).sort((a,b) => b[1]-a[1]);
   const topScore = playerSortedForScore.length ? playerSortedForScore[0][1] : 0;
@@ -683,17 +668,16 @@ async function hostShowResults() {
     tiedWinners.forEach(([name, cnt]) => {
       scoreUpdate[name] = ((data.scores && data.scores[name]) || 0) + cnt;
     });
-    await fbPatch('/games/' + gameCode + '/scores', scoreUpdate);
     if (!gameData.scores) gameData.scores = {};
     Object.assign(gameData.scores, scoreUpdate);
+    fbPatch('/games/' + gameCode + '/scores', scoreUpdate).catch(e => console.warn('Score update failed:', e));
   }
 
-  // Make sure gameData is fully updated before rendering
-  gameData = data;
-  await fbPatch('/games/' + gameCode, { status: 'results' });
+  // Update status to results — fire and forget
+  fbPatch('/games/' + gameCode, { status: 'results' }).catch(e => console.warn('Status update failed:', e));
   renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes);
   showScreen('screen-results');
-  // Animate results cards in sequence
+
   setTimeout(() => {
     document.querySelectorAll('#screen-results .card, #screen-results .winner-banner, #screen-results .tie-banner').forEach((el,i) => {
       el.style.opacity = '0';
@@ -770,6 +754,23 @@ let lastPlayerQShown = -1;
 let lastPlayerStatus = '';
 let myVotedFor = null;
 
+function showPlayerResults(data, qIdx) {
+  const votes = (data.votes && data.votes['q'+qIdx]) || {};
+  const tally = {};
+  Object.values(votes).forEach(v => { tally[v] = (tally[v]||0)+1; });
+  const total = Object.values(votes).length;
+  const isLast = qIdx >= data.totalQ - 1;
+  const pOnlyTally = Object.fromEntries(Object.entries(tally).filter(([k]) => k !== '__none__'));
+  const pOnlySorted = Object.entries(pOnlyTally).sort((a,b) => b[1]-a[1]);
+  const winnerName = pOnlySorted.length && pOnlySorted[0][1] > 0 ? pOnlySorted[0][0] : null;
+  const winnerVotes = winnerName ? pOnlySorted[0][1] : 0;
+  renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes);
+  showScreen('screen-results');
+  gi('results-nav-btn').innerHTML = isLast
+    ? '<p class="muted" style="font-size:13px"><span class="waiting-pulse"></span>Waiting for final scoreboard...</p>'
+    : '<p class="muted" style="font-size:13px"><span class="waiting-pulse"></span>Waiting for next question...</p>';
+}
+
 function startPlayerPoll() {
   startPoll('player', '/games/' + gameCode, (data) => {
     if (!data) return;
@@ -808,35 +809,29 @@ function startPlayerPoll() {
         lastPlayerQShown = qIdx;
         lastPlayerStatus = 'voting';
         myVotedFor = null;
-        // Check if I already voted (e.g. rejoined)
         const existingVote = data.votes && data.votes['q'+qIdx] && data.votes['q'+qIdx][myName];
         if (existingVote) myVotedFor = existingVote;
         renderPlayerVote(data, qIdx, !!myVotedFor);
+      }
+      // Auto-advance player to results when all votes are in
+      const qVotes = (data.votes && data.votes['q'+qIdx]) || {};
+      const voteCount = Object.keys(qVotes).length;
+      const playerCount = Object.keys(data.players || {}).length;
+      if (voteCount >= playerCount && lastPlayerStatus === 'voting' && lastPlayerQShown === qIdx) {
+        lastPlayerStatus = 'results_' + qIdx;
+        clearInterval(playerTimerInterval);
+        showPlayerResults(data, qIdx);
       }
     }
 
     // ── Results ──
     if (data.status === 'results') {
       const qIdx = data.currentQ;
-      lastPlayerQShown = qIdx; // sync up so next question triggers correctly
+      lastPlayerQShown = qIdx;
       if (lastPlayerStatus !== 'results_' + qIdx) {
         lastPlayerStatus = 'results_' + qIdx;
         clearInterval(playerTimerInterval);
-        const votes = (data.votes && data.votes['q'+qIdx]) || {};
-        const tally = {};
-        Object.values(votes).forEach(v => { tally[v] = (tally[v]||0)+1; });
-        const total = Object.values(votes).length;
-        const isLast = qIdx >= data.totalQ - 1;
-        // Exclude __none__ from winner
-        const pOnlyTally = Object.fromEntries(Object.entries(tally).filter(([k]) => k !== '__none__'));
-        const pOnlySorted = Object.entries(pOnlyTally).sort((a,b) => b[1]-a[1]);
-        const winnerName = pOnlySorted.length && pOnlySorted[0][1] > 0 ? pOnlySorted[0][0] : null;
-        const winnerVotes = winnerName ? pOnlySorted[0][1] : 0;
-        renderResults(qIdx, tally, total, isLast, winnerName, winnerVotes);
-        showScreen('screen-results');
-        gi('results-nav-btn').innerHTML = isLast
-          ? '<p class="muted" style="font-size:13px"><span class="waiting-pulse"></span>Waiting for final scoreboard...</p>'
-          : '<p class="muted" style="font-size:13px"><span class="waiting-pulse"></span>Waiting for next question...</p>';
+        showPlayerResults(data, qIdx);
       }
     }
 
