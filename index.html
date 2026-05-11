@@ -477,13 +477,8 @@ function startHostPoll() {
       }
     }
 
-    if (data.status === 'voting' && lastStatus !== 'voting') {
-      lastStatus = 'voting';
-      stopPoll('host');
-      hostLoadQuestion();
-      startHostVotePoll();
-      return;
-    }
+    // Note: voting transition is handled by startGame directly
+    // to avoid double poll race condition
 
     if (data.status === 'final' && lastStatus !== 'final') {
       lastStatus = 'final';
@@ -551,11 +546,12 @@ function updateLiveTally(votes) {
 }
 
 async function startGame() {
+  // Stop ALL polls before starting game to prevent double-poll race condition
+  stopAllPolls();
   lastStatus = 'voting_0'; lastQShown = 0;
   await fbPatch('/games/' + gameCode, { status: 'voting', currentQ: 0, startedAt: ts() });
   const fresh = await fbGet('/games/' + gameCode);
   gameData = fresh;
-  stopPoll('host');
   hostLoadQuestion();
   startHostVotePoll();
 }
@@ -632,6 +628,11 @@ function hostShowResults() {
   clearInterval(timerInterval);
   stopPoll('host-vote');
 
+  // Cancel any running countdown so it doesn't overwrite results screen
+  if (activeCountdownTick) { clearInterval(activeCountdownTick); activeCountdownTick = null; }
+  const countdownOverlay = document.getElementById('countdown-overlay');
+  if (countdownOverlay) countdownOverlay.remove();
+
   // Set lastStatus to prevent any re-trigger
   lastStatus = 'results_' + gameData.currentQ;
 
@@ -683,8 +684,9 @@ function hostShowResults() {
 }
 
 async function hostNextQ() {
+  stopAllPolls(); // stop everything cleanly before next question
   const nextQ = gameData.currentQ + 1;
-  lastStatus = 'voting_' + nextQ; // reset so next question can advance
+  lastStatus = 'voting_' + nextQ;
   lastQShown = nextQ;
   await fbPatch('/games/' + gameCode, { status: 'voting', currentQ: nextQ });
   const fresh = await fbGet('/games/' + gameCode);
@@ -1188,14 +1190,22 @@ function addRipple(btn, e) {
 }
 
 // ── Question countdown overlay ──
+// Store active countdown so it can be cancelled
+let activeCountdownTick = null;
+
 function showQuestionCountdown(questionNum, totalQ, cb) {
-  // Fully clear and hide all screens before showing overlay
+  // Cancel any previous countdown
+  if (activeCountdownTick) { clearInterval(activeCountdownTick); activeCountdownTick = null; }
+  const existingOverlay = document.getElementById('countdown-overlay');
+  if (existingOverlay) existingOverlay.remove();
+
   document.querySelectorAll('.screen').forEach(s => {
     s.classList.remove('active');
     s.style.visibility = 'hidden';
   });
 
   const overlay = document.createElement('div');
+  overlay.id = 'countdown-overlay';
   overlay.style.cssText = `
     position:fixed;inset:0;
     background:var(--bg);
@@ -1215,15 +1225,28 @@ function showQuestionCountdown(questionNum, totalQ, cb) {
   let count = 3;
   const numEl = overlay.querySelector('#countdown-num');
 
-  const tick = setInterval(() => {
+  activeCountdownTick = setInterval(() => {
+    // If results already showing, cancel countdown silently
+    if (lastStatus && lastStatus.startsWith('results_')) {
+      clearInterval(activeCountdownTick);
+      activeCountdownTick = null;
+      overlay.remove();
+      return;
+    }
     count--;
     if (count <= 0) {
-      clearInterval(tick);
+      clearInterval(activeCountdownTick);
+      activeCountdownTick = null;
       numEl.style.animation = 'none';
       numEl.offsetHeight;
       numEl.style.animation = 'popIn 0.25s ease';
       numEl.textContent = '🗳️';
       setTimeout(() => {
+        // Final check before showing vote screen
+        if (lastStatus && lastStatus.startsWith('results_')) {
+          overlay.remove();
+          return;
+        }
         overlay.style.opacity = '0';
         overlay.style.transition = 'opacity 0.25s ease';
         setTimeout(() => { overlay.remove(); cb(); }, 250);
