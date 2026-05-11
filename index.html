@@ -546,14 +546,13 @@ function updateLiveTally(votes) {
 }
 
 async function startGame() {
-  // Stop ALL polls before starting game to prevent double-poll race condition
   stopAllPolls();
   lastStatus = 'voting_0'; lastQShown = 0;
   await fbPatch('/games/' + gameCode, { status: 'voting', currentQ: 0, startedAt: ts() });
   const fresh = await fbGet('/games/' + gameCode);
   gameData = fresh;
   hostLoadQuestion();
-  startHostVotePoll();
+  // NOTE: startHostVotePoll is called INSIDE hostLoadQuestion's countdown callback
 }
 
 function hostLoadQuestion() {
@@ -597,10 +596,11 @@ function hostLoadQuestion() {
     }).join('');
 
     gi('host-voted-msg').style.display = myVotedFor ? 'block' : 'none';
-    // Set responsive columns based on total options (players + None)
     setVoteGridCols('host-vote-options', hostOpts.length);
     showScreen('screen-host-vote');
     startHostTimer();
+    // Start vote poll AFTER vote screen is visible and timer is running
+    startHostVotePoll();
   });
 }
 
@@ -684,7 +684,7 @@ function hostShowResults() {
 }
 
 async function hostNextQ() {
-  stopAllPolls(); // stop everything cleanly before next question
+  stopAllPolls();
   const nextQ = gameData.currentQ + 1;
   lastStatus = 'voting_' + nextQ;
   lastQShown = nextQ;
@@ -692,7 +692,7 @@ async function hostNextQ() {
   const fresh = await fbGet('/games/' + gameCode);
   gameData = fresh;
   hostLoadQuestion();
-  startHostVotePoll();
+  // NOTE: startHostVotePoll is called INSIDE hostLoadQuestion's countdown callback
 }
 
 async function hostShowFinal() {
