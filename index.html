@@ -503,11 +503,28 @@ function startHostVotePoll() {
       gi('vote-progress-fill').style.width = Math.round(voteCount / Math.max(players.length,1) * 100) + '%';
       updateLiveTally(votes);
 
-      // Auto-advance: all votes in AND we haven't shown results for this question yet
+      console.log('POLL: votes=' + voteCount + '/' + players.length + ' lastStatus=' + lastStatus + ' qIdx=' + qIdx);
+
+      // Show manual button when all votes are in
+      if (voteCount >= players.length) {
+        let manualBtn = gi('manual-results-btn');
+        if (!manualBtn) {
+          manualBtn = document.createElement('button');
+          manualBtn.id = 'manual-results-btn';
+          manualBtn.className = 'btn-primary btn-full';
+          manualBtn.style.cssText = 'margin-top:12px;padding:14px;font-size:16px';
+          manualBtn.textContent = '👑 Show Results Now';
+          manualBtn.onclick = () => { hostShowResults(); };
+          gi('screen-host-vote').appendChild(manualBtn);
+        }
+      }
+
+      // Auto-advance: all votes in
       if (voteCount >= players.length && lastStatus !== 'results_' + qIdx) {
+        console.log('AUTO-ADVANCE TRIGGERED');
         clearInterval(timerInterval);
         stopPoll('host-vote');
-        hostShowResults(); // sets lastStatus = 'results_'+qIdx immediately
+        hostShowResults();
       }
     }
 
@@ -625,16 +642,20 @@ function startHostTimer() {
 }
 
 function hostShowResults() {
+  console.log('hostShowResults CALLED, currentQ=' + gameData.currentQ);
   clearInterval(timerInterval);
   stopPoll('host-vote');
 
-  // Cancel any running countdown so it doesn't overwrite results screen
   if (activeCountdownTick) { clearInterval(activeCountdownTick); activeCountdownTick = null; }
   const countdownOverlay = document.getElementById('countdown-overlay');
   if (countdownOverlay) countdownOverlay.remove();
 
-  // Set lastStatus to prevent any re-trigger
+  // Remove manual button if exists
+  const mb = gi('manual-results-btn');
+  if (mb) mb.remove();
+
   lastStatus = 'results_' + gameData.currentQ;
+  console.log('hostShowResults: lastStatus set to ' + lastStatus);
 
   // Use gameData directly - poll keeps it fresh every 2s
   const data = gameData;
