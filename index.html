@@ -507,11 +507,15 @@ function startHostVotePoll() {
       gi('host-vote-received').textContent = voteCount + ' / ' + players.length;
       gi('vote-progress-fill').style.width = Math.round(voteCount / Math.max(players.length,1) * 100) + '%';
       updateLiveTally(votes);
-      // Auto-advance when all voted
-      if (voteCount >= players.length && document.getElementById('screen-host-vote').classList.contains('active')) {
+      // Auto-advance when all voted (use flag to prevent double-firing)
+      if (voteCount >= players.length && !window._showingResults) {
+        window._showingResults = true;
         clearInterval(timerInterval);
         stopPoll('host-vote');
-        setTimeout(hostShowResults, 600);
+        setTimeout(() => {
+          hostShowResults();
+          window._showingResults = false;
+        }, 600);
       }
     }
 
@@ -580,6 +584,9 @@ function hostLoadQuestion() {
   const num = qIdx + 1; const total = data.totalQ;
   const players = sortedPlayers(data);
 
+  // Reset results flag for new question
+  window._showingResults = false;
+
   // Show countdown then reveal question
   showQuestionCountdown(num, total, () => {
     gi('host-q-progress').textContent = 'Question ' + num + ' of ' + total;
@@ -630,12 +637,23 @@ function startHostTimer() {
     t--;
     badge.textContent = t+'s'; big.textContent = t;
     if (t <= 5) { big.classList.add('urgent'); badge.className = 'badge badge-red'; }
-    if (t <= 0) { clearInterval(timerInterval); stopPoll('host-vote'); hostShowResults(); }
+    if (t <= 0) {
+      clearInterval(timerInterval);
+      stopPoll('host-vote');
+      if (!window._showingResults) {
+        window._showingResults = true;
+        hostShowResults().finally(() => { window._showingResults = false; });
+      }
+    }
   }, 1000);
 }
 
 async function hostShowResults() {
   clearInterval(timerInterval);
+
+  // Set lastStatus immediately to prevent poll from double-triggering
+  const qIdxNow = gameData.currentQ;
+  lastStatus = 'results_' + qIdxNow;
 
   // Always fetch fresh data from Firebase so we have all votes including host's
   let data = gameData;
@@ -801,6 +819,7 @@ function startPlayerPoll() {
     // ── Results ──
     if (data.status === 'results') {
       const qIdx = data.currentQ;
+      lastPlayerQShown = qIdx; // sync up so next question triggers correctly
       if (lastPlayerStatus !== 'results_' + qIdx) {
         lastPlayerStatus = 'results_' + qIdx;
         clearInterval(timerInterval);
